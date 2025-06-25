@@ -4,12 +4,13 @@ import { motion, AnimatePresence } from "motion/react"
 import { Icon } from "@iconify/react"
 import Image from "@/components/image"
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 
-const NavItem = ({ children, label, expand, onClick }: { 
-  children: ReactNode, 
-  label: string, 
+const NavItem = ({ children, label, expand, onClick }: {
+  children: ReactNode,
+  label: string,
   expand: boolean,
-  onClick?: () => void 
+  onClick?: () => void
 }) => {
   const [showTooltip, setShowTooltip] = useState(false)
 
@@ -24,14 +25,14 @@ const NavItem = ({ children, label, expand, onClick }: {
         onMouseEnter={() => !expand && setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
       >
-        <motion.span 
+        <motion.span
           className="flex-shrink-0 text-lg"
           animate={{ rotate: expand ? 0 : 0 }}
           transition={{ duration: 0.2 }}
         >
           {children}
         </motion.span>
-        
+
         <AnimatePresence>
           {expand && (
             <motion.span
@@ -65,34 +66,41 @@ const NavItem = ({ children, label, expand, onClick }: {
 }
 
 export default function DesktopSidebar() {
+  const navigate = useNavigate();
   const { expand, toggleExpand } = useSidebarStore()
-  
+
   return (
-    <motion.menu 
+    <motion.menu
       className="bg-brown-900 border-r border-brown-100/20 flex flex-col p-2 overflow-visible relative"
       animate={{ width: expand ? 300 : 64 }}
-      transition={{ 
-        duration: 0.3, 
-        ease: [0.4, 0, 0.2, 1] 
+      transition={{
+        duration: 0.3,
+        ease: [0.4, 0, 0.2, 1]
       }}
     >
       <div className="flex flex-col gap-1">
-        <NavItem label="Me RenAIssant" expand={expand}>
+        <NavItem
+          label="Me RenAIssant" expand={expand}
+          onClick={() => navigate("/chat")}
+        >
           <Image src="/favicon.ico" width={24} height={24} alt="Me RenAIssant" />
         </NavItem>
-        
-        <NavItem label="Joust Centre" expand={expand}>
+
+        <NavItem
+          label="Joust Centre" expand={expand}
+          onClick={() => navigate("/chat/games")}
+        >
           <Icon icon="ri:chess-fill" className="w-5 h-5" />
         </NavItem>
-        
+
         <NavItem label="Play Music" expand={expand}>
           <Icon icon="weui:music-filled" className="w-5 h-5" />
         </NavItem>
       </div>
-      
+
       <div className="mt-auto">
-        <NavItem 
-          label={expand ? "Collapse" : "Expand"} 
+        <NavItem
+          label={expand ? "Collapse" : "Expand"}
           expand={expand}
           onClick={toggleExpand}
         >
