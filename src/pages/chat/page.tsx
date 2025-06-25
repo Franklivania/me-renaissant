@@ -6,18 +6,16 @@ import { useProfileStore } from '@/store/useProfileStore';
 import { useChatStore } from '@/store/useChatStore';
 import { GroqService } from '@/services/groq-service';
 import { useSearchParams } from 'react-router-dom';
-import { ChatActions } from '@/components/chat-actions';
 
 export default function ChatPage() {
   const [searchParams] = useSearchParams();
   const conversationId = searchParams.get('chat');
 
-  const { doppelganger, isConnected: profileConnected } = useProfileStore();
+  const { doppelganger} = useProfileStore();
   const {
     messages,
     isLoading,
     isTyping,
-    isConnected: chatConnected,
     loadConversationHistory,
     addMessage,
     setTyping,
@@ -133,39 +131,22 @@ export default function ChatPage() {
     );
   }
 
-  const conversationTitle = conversationId 
-    ? `Chat ${conversationId.slice(0, 8)}` 
-    : 'Main Conversation';
-
   const hasMessages = messages.length > 0;
 
   return (
     <div className="flex flex-col h-full">
-      {/* Chat Header */}
       <div className="flex-shrink-0 p-4 border-b border-brown-100/20">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-brown-100/20 flex items-center justify-center">
-              <Icon icon="mdi:account-circle" className="w-6 h-6 text-brown-100" />
-            </div>
-            <div>
-              <h3 className="text-brown-100 font-im text-lg">{doppelganger.name}</h3>
-              <p className="text-brown-100/60 text-sm">{doppelganger.title}</p>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-brown-100/20 flex items-center justify-center">
+            <Icon icon="mdi:account-circle" className="w-6 h-6 text-brown-100" />
           </div>
-
-          {/* Chat Actions */}
-          {hasMessages && (
-            <ChatActions
-              conversationId={conversationId || 'default'}
-              conversationTitle={conversationTitle}
-              messages={messages}
-            />
-          )}
+          <div>
+            <h3 className="text-brown-100 font-im text-lg">{doppelganger.name}</h3>
+            <p className="text-brown-100/60 text-sm">{doppelganger.title}</p>
+          </div>
         </div>
       </div>
 
-      {/* Messages Container */}
       <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${!hasMessages ? 'flex items-center justify-center' : ''}`}>
         <AnimatePresence>
           {!hasMessages && !isLoading && (
@@ -181,7 +162,7 @@ export default function ChatPage() {
                 Greetings, kindred soul!
               </h3>
               <p className="text-brown-100/70">
-                I am {doppelganger.name}, thy Renaissance mirror. What wisdom or wonder 
+                I am {doppelganger.name}, thy Renaissance mirror. What wisdom or wonder
                 shall we explore together across the centuries?
               </p>
             </motion.div>
@@ -265,7 +246,6 @@ export default function ChatPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input */}
       <div className={`flex-shrink-0 p-4 ${hasMessages ? 'border-t border-brown-100/20' : ''}`}>
         {connectionStatus === 'disconnected' && (
           <div className="mb-3 p-2 bg-red-400/20 border border-red-400/40 rounded-lg text-center">

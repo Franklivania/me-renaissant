@@ -32,7 +32,7 @@ export const Modal: React.FC<ModalProps> = ({
   const { isMobile } = useDeviceSize();
 
   const getModalClasses = () => {
-    if (isMobile) {
+    if (isMobile && variant !== 'small' && variant !== 'medium') {
       return 'w-[96vw] h-[95vh] max-w-none max-h-none';
     }
 
@@ -51,27 +51,12 @@ export const Modal: React.FC<ModalProps> = ({
     }
   };
 
-  const getModalPosition = () => {
-    if (variant === 'sidemodal') {
-      return sidePosition === 'left' 
-        ? 'justify-start items-center' 
-        : 'justify-end items-center';
-    }
-    return 'justify-center items-center';
-  };
-
   const getModalAnimation = () => {
     if (variant === 'sidemodal') {
       return {
-        initial: { 
-          x: sidePosition === 'left' ? '-100%' : '100%',
-          opacity: 0 
-        },
+        initial: { x: sidePosition === 'left' ? '-100%' : '100%', opacity: 0 },
         animate: { x: 0, opacity: 1 },
-        exit: { 
-          x: sidePosition === 'left' ? '-100%' : '100%',
-          opacity: 0 
-        }
+        exit: { x: sidePosition === 'left' ? '-100%' : '100%', opacity: 0 }
       };
     }
     
@@ -100,11 +85,9 @@ export const Modal: React.FC<ModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className={clsx(
-            'fixed inset-0 z-50 flex',
-            getModalPosition()
+            'fixed inset-0 z-50 flex justify-center items-center'
           )}
         >
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -113,7 +96,6 @@ export const Modal: React.FC<ModalProps> = ({
             onClick={closeOnOverlayClick ? onClose : undefined}
           />
 
-          {/* Modal */}
           <motion.div
             {...getModalAnimation()}
             transition={{
@@ -123,13 +105,12 @@ export const Modal: React.FC<ModalProps> = ({
               mass: 0.8
             }}
             className={clsx(
-              'relative bg-brown-800 border border-brown-100/20 shadow-2xl flex flex-col',
+              'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-brown-800 border border-brown-100/20 shadow-2xl flex flex-col z-60',
               variant === 'sidemodal' ? 'rounded-none' : 'rounded-lg',
               getModalClasses(),
               className
             )}
           >
-            {/* Header */}
             {(title || showCloseButton) && (
               <div className="flex items-center justify-between p-4">
                 {title && (
@@ -150,7 +131,6 @@ export const Modal: React.FC<ModalProps> = ({
               </div>
             )}
 
-            {/* Content */}
             <div className={clsx(
               'p-4',
               isScrollable && 'overflow-y-auto flex-1',

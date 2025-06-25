@@ -1,13 +1,10 @@
-import React, { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useState } from 'react';
 import { Icon } from '@iconify/react';
 import { Modal } from '@/components/modal';
 import { Button } from '@/components';
 import { useChatStore } from '@/store/useChatStore';
 import { useNavigate } from 'react-router-dom';
 import type { ConversationMessage } from '@/types';
-import useDeviceSize from '@/hooks/useDeviceSize';
-import clsx from 'clsx';
 
 interface ChatActionsProps {
   conversationId: string;
@@ -22,21 +19,17 @@ export const ChatActions: React.FC<ChatActionsProps> = ({
   messages = [],
   onActionComplete
 }) => {
-  const [showActions, setShowActions] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   const { deleteConversation } = useChatStore();
   const navigate = useNavigate();
-  const { isMobile } = useDeviceSize();
-  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const handleExportChat = async () => {
     setIsExporting(true);
 
     try {
-      // Create text content
       const chatContent = messages
         .map(msg => {
           const timestamp = new Date(msg.created_at).toLocaleString();
@@ -57,7 +50,6 @@ ${'='.repeat(50)}
 
 End of Chat Export`;
 
-      // Create and download file
       const blob = new Blob([fullContent], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -68,7 +60,6 @@ End of Chat Export`;
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      setShowActions(false);
       onActionComplete?.();
     } catch (error) {
       console.error('Error exporting chat:', error);
@@ -85,10 +76,8 @@ End of Chat Export`;
 
       if (success) {
         setShowDeleteModal(false);
-        setShowActions(false);
         onActionComplete?.();
 
-        // Navigate to main chat if we're currently viewing this conversation
         const currentUrl = window.location.href;
         if (currentUrl.includes(`chat=${conversationId}`)) {
           navigate('/chat');
@@ -102,86 +91,37 @@ End of Chat Export`;
   };
 
   return (
-    <div className="relative">
-      {/* Actions Trigger */}
-      <motion.button
-        ref={buttonRef}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowActions(!showActions);
-        }}
-        className="p-1 rounded-md hover:bg-brown-100/10 text-brown-100/60 hover:text-brown-100 transition-colors"
+    <>
+      {/* Export Action */}
+      <button
+        onClick={handleExportChat}
+        disabled={isExporting || messages.length === 0}
+        className="w-full flex items-center gap-3 p-2 rounded-md hover:bg-brown-100/10 text-brown-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-left"
       >
-        <Icon icon="lucide:more-horizontal" className="w-4 h-4" />
-      </motion.button>
+        <Icon
+          icon={isExporting ? "lucide:loader-2" : "lucide:download"}
+          className={`w-4 h-4 ${isExporting ? 'animate-spin' : ''}`}
+        />
+        <span className="text-sm">
+          {isExporting ? 'Exporting...' : 'Export Chat'}
+        </span>
+      </button>
 
-      {/* Actions Dropdown */}
-      <AnimatePresence>
-        {showActions && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-30"
-              onClick={() => setShowActions(false)}
-            />
+      {/* Delete Action */}
+      <button
+        onClick={() => setShowDeleteModal(true)}
+        disabled={conversationId === 'default'}
+        className="w-full flex items-center gap-3 p-2 rounded-md hover:bg-red-400/20 text-red-400 hover:text-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-left"
+      >
+        <Icon icon="lucide:trash-2" className="w-4 h-4" />
+        <span className="text-sm">Delete Chat</span>
+      </button>
 
-            {/* Actions Menu */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-              transition={{ duration: 0.15 }}
-              className={clsx(
-                'absolute bg-brown-800 border border-brown-100/20 rounded-lg shadow-xl z-40 min-w-48',
-                'right-0 top-8'
-              )}
-            >
-              <div className="p-2 space-y-1">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleExportChat}
-                  disabled={isExporting || messages.length === 0}
-                  className="w-full flex items-center gap-3 p-2 rounded-md hover:bg-brown-100/10 text-brown-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-left"
-                >
-                  <Icon
-                    icon={isExporting ? "lucide:loader-2" : "lucide:download"}
-                    className={`w-4 h-4 ${isExporting ? 'animate-spin' : ''}`}
-                  />
-                  <span className="text-sm">
-                    {isExporting ? 'Exporting...' : 'Export Chat'}
-                  </span>
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    setShowActions(false);
-                    setShowDeleteModal(true);
-                  }}
-                  disabled={conversationId === 'default'}
-                  className="w-full flex items-center gap-3 p-2 rounded-md hover:bg-red-400/20 text-red-400 hover:text-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-left"
-                >
-                  <Icon icon="lucide:trash-2" className="w-4 h-4" />
-                  <span className="text-sm">Delete Chat</span>
-                </motion.button>
-
-                {conversationId === 'default' && (
-                  <p className="text-xs text-brown-100/40 px-2 py-1">
-                    Main conversation cannot be deleted
-                  </p>
-                )}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      {conversationId === 'default' && (
+        <p className="text-xs text-brown-100/40 px-2 py-1">
+          Main conversation cannot be deleted
+        </p>
+      )}
 
       {/* Delete Confirmation Modal */}
       <Modal
@@ -226,6 +166,6 @@ End of Chat Export`;
           </div>
         </div>
       </Modal>
-    </div>
+    </>
   );
 };

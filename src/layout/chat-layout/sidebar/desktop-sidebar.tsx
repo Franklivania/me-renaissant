@@ -1,14 +1,24 @@
 import useSidebarStore from "@/store/useSidebarStore"
+import { useChatActionsStore } from "@/store/useChatActionsStore"
 import type { ReactNode } from "react"
 import { motion, AnimatePresence } from "motion/react"
 import { Icon } from "@iconify/react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { useChatStore } from "@/store/useChatStore"
 import { ChatActions } from "@/components/chat-actions"
 import Image from "@/components/image"
+import clsx from 'clsx'
 
-const NavItem = ({ children, label, expand, onClick, isActive = false, conversationId, showActions = false }: {
+const NavItem = ({ 
+  children, 
+  label, 
+  expand, 
+  onClick, 
+  isActive = false, 
+  conversationId, 
+  showActions = false 
+}: {
   children: ReactNode,
   label: string,
   expand: boolean,
@@ -18,13 +28,40 @@ const NavItem = ({ children, label, expand, onClick, isActive = false, conversat
   showActions?: boolean
 }) => {
   const [showTooltip, setShowTooltip] = useState(false)
+  const { activeDropdown, setActiveDropdown, closeDropdown } = useChatActionsStore()
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  
+  const isDropdownOpen = activeDropdown === conversationId
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        closeDropdown()
+      }
+    }
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isDropdownOpen, closeDropdown])
+
+  const toggleDropdown = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (isDropdownOpen) {
+      closeDropdown()
+    } else {
+      setActiveDropdown(conversationId!)
+    }
+  }
 
   return (
     <div className="relative group">
       <motion.div
         className={`flex items-center w-full rounded-xl p-3 transition-colors text-brown-100 text-left group ${
-          isActive 
-            ? 'bg-brown-100/20 text-brown-100' 
+          isActive
+            ? 'bg-brown-100/20 text-brown-100'
             : 'hover:bg-brown-100/10'
         }`}
         whileHover={{ scale: 1.02 }}
@@ -64,23 +101,60 @@ const NavItem = ({ children, label, expand, onClick, isActive = false, conversat
           </AnimatePresence>
         </button>
 
-        {/* Actions button for conversations - positioned outside the main button */}
+        {/* Actions Button - Integrated into NavItem */}
         {showActions && expand && conversationId && (
-          <div className="ml-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-            <div onClick={(e) => e.stopPropagation()}>
-              <ChatActions
-                conversationId={conversationId}
-                conversationTitle={label}
-                onActionComplete={() => {
-                  // Refresh conversations after action
-                  window.location.reload();
-                }}
-              />
-            </div>
-          </div>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={toggleDropdown}
+            className="ml-2 p-1 rounded-md hover:bg-brown-100/10 text-brown-100/60 hover:text-brown-100 transition-colors opacity-0 group-hover:opacity-100"
+          >
+            <Icon icon="lucide:more-horizontal" className="w-4 h-4" />
+          </motion.button>
         )}
       </motion.div>
 
+      {/* Actions Dropdown */}
+      <AnimatePresence>
+        {isDropdownOpen && showActions && conversationId && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9998]"
+              onClick={closeDropdown}
+            />
+
+            {/* Dropdown Menu */}
+            <motion.div
+              ref={dropdownRef}
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.15 }}
+              className={clsx(
+                'absolute bg-brown-800 border border-brown-100/20 rounded-lg shadow-2xl min-w-48 z-[9999]',
+                'right-0 top-full mt-1'
+              )}
+            >
+              <div className="p-2 space-y-1">
+                <ChatActions
+                  conversationId={conversationId}
+                  conversationTitle={label}
+                  onActionComplete={() => {
+                    closeDropdown()
+                    window.location.reload()
+                  }}
+                />
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Tooltip */}
       <AnimatePresence>
         {showTooltip && !expand && (
           <motion.div
@@ -104,6 +178,7 @@ export default function DesktopSidebar() {
   const currentChat = searchParams.get('chat');
   const { expand, toggleExpand } = useSidebarStore();
   const { conversations, loadConversations, isConnected } = useChatStore();
+  const { closeDropdown } = useChatActionsStore();
 
   useEffect(() => {
     if (isConnected) {
@@ -111,13 +186,20 @@ export default function DesktopSidebar() {
     }
   }, [loadConversations, isConnected]);
 
+  // Close any open dropdowns when sidebar collapses
+  useEffect(() => {
+    if (!expand) {
+      closeDropdown();
+    }
+  }, [expand, closeDropdown]);
+
   const handleNewChat = () => {
-    // Generate new conversation ID and navigate
     const newChatId = crypto.randomUUID();
     navigate(`/chat?chat=${newChatId}`);
   };
 
   const handleConversationClick = (conversationId: string) => {
+    closeDropdown(); // Close any open dropdown when navigating
     if (conversationId === 'default') {
       navigate("/chat");
     } else {
@@ -136,7 +218,7 @@ export default function DesktopSidebar() {
     >
       <div className="w-full h-full flex flex-col gap-1">
         <NavItem
-          label="Me RenAIssant" 
+          label="Me RenAIssant"
           expand={expand}
           isActive={false}
         >
@@ -144,7 +226,7 @@ export default function DesktopSidebar() {
         </NavItem>
 
         <NavItem
-          label="New Chat" 
+          label="New Chat"
           expand={expand}
           onClick={handleNewChat}
           isActive={false}
@@ -153,45 +235,28 @@ export default function DesktopSidebar() {
         </NavItem>
 
         <NavItem
-          label="Joust Centre" 
+          label="Joust Centre"
           expand={expand}
           onClick={() => navigate("/chat/games")}
         >
           <Icon icon="ri:chess-fill" className="w-5 h-5" />
         </NavItem>
 
-        {/* Conversations Section */}
         {expand && conversations.length > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="mt-4 flex-1 min-h-0"
+            className="mt-4 w-full h-full"
           >
             <div className="px-3 py-2">
               <h3 className="text-xs font-semibold text-brown-100/60 uppercase tracking-normal">
                 Recent Conversations
               </h3>
             </div>
-            <div className="space-y-1 overflow-x-hidden overflow-y-auto flex-1 pr-1" style={{
+            <div className="h-full space-y-1 overflow-x-hidden overflow-y-auto flex-1 pr-1" style={{
               scrollbarWidth: 'thin',
               scrollbarColor: '#D4AF37 #2A1F14'
             }}>
-              <style jsx>{`
-                div::-webkit-scrollbar {
-                  width: 6px;
-                }
-                div::-webkit-scrollbar-track {
-                  background: #2A1F14;
-                  border-radius: 3px;
-                }
-                div::-webkit-scrollbar-thumb {
-                  background: #D4AF37;
-                  border-radius: 3px;
-                }
-                div::-webkit-scrollbar-thumb:hover {
-                  background: #B8941F;
-                }
-              `}</style>
               {conversations.slice(0, 10).map((conversation) => (
                 <NavItem
                   key={conversation.id}
