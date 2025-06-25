@@ -58,7 +58,7 @@ const MobileNavItem = ({
             {children}
           </motion.span>
           
-          <span className="text-base font-medium truncate flex-1">{label}</span>
+          <span className="text-base font-medium truncate">{label}</span>
           
           <motion.div
             className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"

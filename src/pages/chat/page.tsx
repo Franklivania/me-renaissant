@@ -285,7 +285,7 @@ export default function ChatPage() {
               placeholder="Share thy thoughts with thy Renaissance mirror... (Shift+Enter for new line)"
               disabled={isSending}
               rows={1}
-              className="w-full px-4 py-3 text-lg bg-brown-100/5 border-2 border-brown-100/20 text-brown-100 placeholder-brown-100/40 focus:outline-none focus:border-brown-100/40 placeholder:font-lato transition-colors duration-200 rounded-lg resize-none min-h-[3rem] max-h-[7.5rem]"
+              className="w-full px-4 py-3 text-lg bg-brown-100/5 border-b-2 border-brown-100/20 text-brown-100 placeholder-brown-100/40 focus:outline-none focus:border-gold placeholder:font-lato transition-colors duration-200 resize-none outline-0 min-h-[3rem] max-h-[7.5rem]"
             />
           </div>
           <Button

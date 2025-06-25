@@ -7,6 +7,7 @@ import { useChatStore } from '@/store/useChatStore';
 import { useNavigate } from 'react-router-dom';
 import type { ConversationMessage } from '@/types';
 import useDeviceSize from '@/hooks/useDeviceSize';
+import clsx from 'clsx';
 
 interface ChatActionsProps {
   conversationId: string;
@@ -25,7 +26,7 @@ export const ChatActions: React.FC<ChatActionsProps> = ({
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  
+
   const { deleteConversation } = useChatStore();
   const navigate = useNavigate();
   const { isMobile } = useDeviceSize();
@@ -33,7 +34,7 @@ export const ChatActions: React.FC<ChatActionsProps> = ({
 
   const handleExportChat = async () => {
     setIsExporting(true);
-    
+
     try {
       // Create text content
       const chatContent = messages
@@ -78,15 +79,15 @@ End of Chat Export`;
 
   const handleDeleteChat = async () => {
     setIsDeleting(true);
-    
+
     try {
       const success = await deleteConversation(conversationId);
-      
+
       if (success) {
         setShowDeleteModal(false);
         setShowActions(false);
         onActionComplete?.();
-        
+
         // Navigate to main chat if we're currently viewing this conversation
         const currentUrl = window.location.href;
         if (currentUrl.includes(`chat=${conversationId}`)) {
@@ -139,8 +140,8 @@ End of Chat Export`;
               transition={{ duration: 0.15 }}
               className={clsx(
                 'absolute bg-brown-800 border border-brown-100/20 rounded-lg shadow-xl z-50 min-w-48',
-                isMobile 
-                  ? 'right-0 top-8' 
+                isMobile
+                  ? 'right-0 top-8'
                   : 'right-0 top-8'
               )}
             >
@@ -152,9 +153,9 @@ End of Chat Export`;
                   disabled={isExporting || messages.length === 0}
                   className="w-full flex items-center gap-3 p-2 rounded-md hover:bg-brown-100/10 text-brown-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-left"
                 >
-                  <Icon 
-                    icon={isExporting ? "lucide:loader-2" : "lucide:download"} 
-                    className={`w-4 h-4 ${isExporting ? 'animate-spin' : ''}`} 
+                  <Icon
+                    icon={isExporting ? "lucide:loader-2" : "lucide:download"}
+                    className={`w-4 h-4 ${isExporting ? 'animate-spin' : ''}`}
                   />
                   <span className="text-sm">
                     {isExporting ? 'Exporting...' : 'Export Chat'}

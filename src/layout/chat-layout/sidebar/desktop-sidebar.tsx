@@ -6,6 +6,7 @@ import { useState, useEffect } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { useChatStore } from "@/store/useChatStore"
 import { ChatActions } from "@/components/chat-actions"
+import Image from "@/components/image"
 
 const NavItem = ({ children, label, expand, onClick, isActive = false, conversationId, showActions = false }: {
   children: ReactNode,
@@ -38,10 +39,10 @@ const NavItem = ({ children, label, expand, onClick, isActive = false, conversat
         <button
           type="button"
           onClick={onClick}
-          className="flex items-center flex-1"
+          className="flex flex-1"
         >
           <motion.span
-            className="flex-shrink-0 text-lg"
+            className="flex-shrink-0 items-center text-lg"
             animate={{ rotate: expand ? 0 : 0 }}
             transition={{ duration: 0.2 }}
           >
@@ -55,7 +56,7 @@ const NavItem = ({ children, label, expand, onClick, isActive = false, conversat
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
                 transition={{ duration: 0.2, delay: 0.1 }}
-                className="ml-3 text-sm font-medium whitespace-nowrap truncate flex-1"
+                className="ml-3 text-sm font-medium whitespace-nowrap truncate"
               >
                 {label}
               </motion.span>
@@ -131,7 +132,15 @@ export default function DesktopSidebar() {
         ease: [0.4, 0, 0.2, 1]
       }}
     >
-      <div className="flex flex-col gap-1">
+      <div className="w-full h-full flex flex-col gap-1">
+        <NavItem
+          label="Me RenAIssant" 
+          expand={expand}
+          isActive={false}
+        >
+          <Image src="/favicon.ico" width={24} height={24} alt="Me RenAIssant" className="object-contain" />
+        </NavItem>
+
         <NavItem
           label="New Chat" 
           expand={expand}
@@ -157,7 +166,7 @@ export default function DesktopSidebar() {
             className="mt-4"
           >
             <div className="px-3 py-2">
-              <h3 className="text-xs font-semibold text-brown-100/60 uppercase tracking-wider">
+              <h3 className="text-xs font-semibold text-brown-100/60 uppercase tracking-normal">
                 Recent Conversations
               </h3>
             </div>
