@@ -1,0 +1,144 @@
+@import "tailwindcss";
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css" layer(utilities);
+@layer theme, base, components, utilities;
+
+@layer base {
+  h1 {
+    font-size: 2em;
+    line-height: 1.2;
+    font-weight: 400;
+  }
+
+  h2 {
+    font-size: 1.5em;
+    line-height: 1.2;
+    font-weight: 400;
+  }
+
+  h3 {
+    font-size: 1.17em;
+    line-height: 1.2;
+    font-weight: 400;
+  }
+
+  h4 {
+    font-size: 1em;
+    line-height: 1.2;
+    font-weight: 400;
+  }
+
+  h5 {
+    font-size: 0.83em;
+    line-height: 1.2;
+    font-weight: 400;
+  }
+
+  h6 {
+    font-size: 0.67em;
+    line-height: 1.2;
+    font-weight: 400;
+  }
+
+  p {
+    font-size: 0.875em;
+    line-height: 1.5;
+    font-weight: 300;
+  }
+}
+@font-face {
+  font-family: 'IMFellEnglish';
+  src: url('./assets/fonts/IMFellEnglish-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IMFellEnglish';
+  src: url('./assets/fonts/IMFellEnglish-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lato';
+  src: url('./assets/fonts/Lato-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lato';
+  src: url('./assets/fonts/Lato-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lato';
+  src: url('./assets/fonts/Lato-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  body {
+    font-family: 'Lato', sans-serif;
+    /* Enable smooth scrolling for a fluid feel */
+    scroll-behavior: smooth;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'IMFellEnglish', serif;
+  }
+}
+
+/* Smooth, fluid, and brown-100 themed scrollbar */
+body, * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-brown-300, #7B2C3B) var(--color-brown-100, #F5F0E1);
+  scroll-behavior: smooth;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+  background: var(--color-brown-100, #F5F0E1);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-brown-100, #F5F0E1);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--color-brown-300, #7B2C3B) 60%, var(--color-brown-800, #2A1F14) 100%);
+  border-radius: 8px;
+  border: 2px solid var(--color-brown-100, #F5F0E1);
+  transition: background 0.3s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, var(--color-brown-800, #2A1F14) 60%, var(--color-brown-300, #7B2C3B) 100%);
+}
+
+@theme {
+  --color-brown-100: #F5F0E1;
+  --color-brown-300: #7B2C3B;
+  --color-brown-800: #2A1F14;
+  --color-mint: #3D9970;
+  --color-ink: #1D3557;
+  --color-gold: #D4AF37;
+  --font-im: "IMFellEnglish", serif;
+  --font-lato: "Lato", sans-serif;
+}
+
+button {
+  cursor: pointer;
+}
+
