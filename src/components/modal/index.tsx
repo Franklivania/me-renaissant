@@ -38,7 +38,7 @@ export const Modal: React.FC<ModalProps> = ({
 
     switch (variant) {
       case 'small':
-        return 'w-80 h-80 max-w-sm max-h-sm';
+        return 'w-80 min-h-fit max-h-80 max-w-sm';
       case 'medium':
         return 'w-[60vw] h-[70vh] max-w-2xl max-h-[70vh]';
       case 'sidemodal':
@@ -123,7 +123,7 @@ export const Modal: React.FC<ModalProps> = ({
               mass: 0.8
             }}
             className={clsx(
-              'relative bg-brown-800 border border-brown-100/20 shadow-2xl',
+              'relative bg-brown-800 border border-brown-100/20 shadow-2xl flex flex-col',
               variant === 'sidemodal' ? 'rounded-none' : 'rounded-lg',
               getModalClasses(),
               className
@@ -131,7 +131,7 @@ export const Modal: React.FC<ModalProps> = ({
           >
             {/* Header */}
             {(title || showCloseButton) && (
-              <div className="flex items-center justify-between p-4 border-b border-brown-100/20">
+              <div className="flex items-center justify-between p-4">
                 {title && (
                   <h3 className="text-lg font-semibold text-brown-100 font-im">
                     {title}
@@ -153,7 +153,8 @@ export const Modal: React.FC<ModalProps> = ({
             {/* Content */}
             <div className={clsx(
               'p-4',
-              isScrollable && 'overflow-y-auto flex-1'
+              isScrollable && 'overflow-y-auto flex-1',
+              variant === 'small' && 'flex-shrink-0'
             )}>
               {children}
             </div>

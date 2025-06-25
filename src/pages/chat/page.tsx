@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components';
-import { Input } from '@/components/form/input';
 import { Icon } from '@iconify/react';
 import { useProfileStore } from '@/store/useProfileStore';
 import { useChatStore } from '@/store/useChatStore';
@@ -29,6 +28,7 @@ export default function ChatPage() {
   const [isSending, setIsSending] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'testing'>('testing');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     // Test connections and load conversation history
@@ -49,6 +49,14 @@ export default function ChatPage() {
     // Scroll to bottom when new messages arrive
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px';
+    }
+  }, [inputMessage]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,11 +113,18 @@ export default function ChatPage() {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(e as any);
+    }
+  };
+
   if (!doppelganger) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center text-brown-100">
-          <p className="mb-4">Thy doppelganger awaits creation...</p>
+          <p className="mb-4">Thy Renaissance mirror awaits creation...</p>
           <Button onClick={() => window.location.href = '/onboarding'}>
             Begin the Journey
           </Button>
@@ -121,6 +136,8 @@ export default function ChatPage() {
   const conversationTitle = conversationId 
     ? `Chat ${conversationId.slice(0, 8)}` 
     : 'Main Conversation';
+
+  const hasMessages = messages.length > 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -138,7 +155,7 @@ export default function ChatPage() {
           </div>
 
           {/* Chat Actions */}
-          {messages.length > 0 && (
+          {hasMessages && (
             <ChatActions
               conversationId={conversationId || 'default'}
               conversationTitle={conversationTitle}
@@ -149,13 +166,13 @@ export default function ChatPage() {
       </div>
 
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${!hasMessages ? 'flex items-center justify-center' : ''}`}>
         <AnimatePresence>
-          {messages.length === 0 && !isLoading && (
+          {!hasMessages && !isLoading && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center py-8"
+              className="text-center py-8 max-w-md mx-auto"
             >
               <div className="mb-4">
                 <Icon icon="mdi:chat-outline" className="w-16 h-16 text-brown-100/40 mx-auto" />
@@ -163,14 +180,14 @@ export default function ChatPage() {
               <h3 className="text-brown-100 font-im text-xl mb-2">
                 Greetings, kindred soul!
               </h3>
-              <p className="text-brown-100/70 max-w-md mx-auto">
+              <p className="text-brown-100/70">
                 I am {doppelganger.name}, thy Renaissance mirror. What wisdom or wonder
                 shall we explore together across the centuries?
               </p>
             </motion.div>
           )}
 
-          {isLoading && messages.length === 0 && (
+          {isLoading && !hasMessages && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -185,59 +202,63 @@ export default function ChatPage() {
             </motion.div>
           )}
 
-          {messages.map((message, index) => (
-            <motion.div
-              key={message.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div className={`max-w-[80%] ${message.sender === 'user' ? 'order-2' : 'order-1'}`}>
-                <div
-                  className={`p-3 rounded-lg ${message.sender === 'user'
-                    ? 'bg-brown-100 text-brown-800 rounded-br-sm'
-                    : 'bg-brown-100/10 text-brown-100 rounded-bl-sm border border-brown-100/20'
-                    }`}
+          {hasMessages && (
+            <div className="space-y-4">
+              {messages.map((message, index) => (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <p className="text-sm leading-relaxed">{message.message}</p>
-                </div>
-                <p className="text-xs text-brown-100/40 mt-1 px-2">
-                  {new Date(message.created_at).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </p>
-              </div>
-            </motion.div>
-          ))}
+                  <div className={`max-w-[80%] ${message.sender === 'user' ? 'order-2' : 'order-1'}`}>
+                    <div
+                      className={`p-3 rounded-lg ${message.sender === 'user'
+                        ? 'bg-brown-100 text-brown-800 rounded-br-sm'
+                        : 'bg-brown-100/10 text-brown-100 rounded-bl-sm border border-brown-100/20'
+                        }`}
+                    >
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.message}</p>
+                    </div>
+                    <p className="text-xs text-brown-100/40 mt-1 px-2">
+                      {new Date(message.created_at).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
 
-          {isTyping && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex justify-start"
-            >
-              <div className="bg-brown-100/10 text-brown-100 p-3 rounded-lg rounded-bl-sm border border-brown-100/20">
-                <div className="flex space-x-1">
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                    className="w-2 h-2 bg-brown-100/60 rounded-full"
-                  />
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
-                    className="w-2 h-2 bg-brown-100/60 rounded-full"
-                  />
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-                    className="w-2 h-2 bg-brown-100/60 rounded-full"
-                  />
-                </div>
-              </div>
-            </motion.div>
+              {isTyping && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex justify-start"
+                >
+                  <div className="bg-brown-100/10 text-brown-100 p-3 rounded-lg rounded-bl-sm border border-brown-100/20">
+                    <div className="flex space-x-1">
+                      <motion.div
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                        className="w-2 h-2 bg-brown-100/60 rounded-full"
+                      />
+                      <motion.div
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                        className="w-2 h-2 bg-brown-100/60 rounded-full"
+                      />
+                      <motion.div
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                        className="w-2 h-2 bg-brown-100/60 rounded-full"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </div>
           )}
         </AnimatePresence>
 
@@ -254,14 +275,17 @@ export default function ChatPage() {
           </div>
         )}
 
-        <form onSubmit={handleSendMessage} className="flex gap-2">
+        <form onSubmit={handleSendMessage} className="flex gap-2 items-end">
           <div className="flex-1">
-            <Input
+            <textarea
+              ref={textareaRef}
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Share thy thoughts with thy Renaissance mirror..."
+              onKeyDown={handleKeyDown}
+              placeholder="Share thy thoughts with thy Renaissance mirror... (Shift+Enter for new line)"
               disabled={isSending}
-              className="bg-brown-100/5 border-brown-100/20 focus:border-brown-100/40"
+              rows={1}
+              className="w-full px-4 py-3 text-lg bg-brown-100/5 border-2 border-brown-100/20 text-brown-100 placeholder-brown-100/40 focus:outline-none focus:border-brown-100/40 placeholder:font-lato transition-colors duration-200 rounded-lg resize-none min-h-[3rem] max-h-[7.5rem]"
             />
           </div>
           <Button
@@ -270,6 +294,7 @@ export default function ChatPage() {
             radius="curved"
             disabled={!inputMessage.trim() || isSending}
             loading={isSending}
+            className="px-4 h-12"
           >
             {!isSending && <Icon icon="streamline-cyber:quill" className="w-5 h-5" />}
           </Button>

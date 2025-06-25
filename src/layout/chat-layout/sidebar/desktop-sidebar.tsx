@@ -20,9 +20,7 @@ const NavItem = ({ children, label, expand, onClick, isActive = false, conversat
 
   return (
     <div className="relative group">
-      <motion.button
-        type="button"
-        onClick={onClick}
+      <motion.div
         className={`flex items-center w-full rounded-xl p-3 transition-colors text-brown-100 text-left group ${
           isActive 
             ? 'bg-brown-100/20 text-brown-100' 
@@ -37,27 +35,33 @@ const NavItem = ({ children, label, expand, onClick, isActive = false, conversat
           setShowTooltip(false);
         }}
       >
-        <motion.span
-          className="flex-shrink-0 text-lg"
-          animate={{ rotate: expand ? 0 : 0 }}
-          transition={{ duration: 0.2 }}
+        <button
+          type="button"
+          onClick={onClick}
+          className="flex items-center flex-1"
         >
-          {children}
-        </motion.span>
+          <motion.span
+            className="flex-shrink-0 text-lg"
+            animate={{ rotate: expand ? 0 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {children}
+          </motion.span>
 
-        <AnimatePresence>
-          {expand && (
-            <motion.span
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.2, delay: 0.1 }}
-              className="ml-3 text-sm font-medium whitespace-nowrap truncate flex-1"
-            >
-              {label}
-            </motion.span>
-          )}
-        </AnimatePresence>
+          <AnimatePresence>
+            {expand && (
+              <motion.span
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2, delay: 0.1 }}
+                className="ml-3 text-sm font-medium whitespace-nowrap truncate flex-1"
+              >
+                {label}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </button>
 
         {/* Actions button for conversations */}
         {showActions && expand && conversationId && (
@@ -72,7 +76,7 @@ const NavItem = ({ children, label, expand, onClick, isActive = false, conversat
             />
           </div>
         )}
-      </motion.button>
+      </motion.div>
 
       <AnimatePresence>
         {showTooltip && !expand && (
