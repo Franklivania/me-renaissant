@@ -70,14 +70,14 @@ export const TicTacToeGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
-        <Button variant="ghost" onClick={onBack}>
+        <Button variant="ghost" onClick={onBack} className="text-brown-100 hover:text-gold">
           <Icon icon="lucide:arrow-left" className="w-4 h-4 mr-2" />
           Back to Games
         </Button>
-        <h1 className="text-2xl font-serif font-bold text-parchment-100">
+        <h1 className="text-2xl font-im font-bold text-brown-100">
           Tic-Tac-Tech
         </h1>
-        <Button variant="ghost" onClick={resetGame}>
+        <Button variant="ghost" onClick={resetGame} className="text-brown-100 hover:text-gold">
           <Icon icon="lucide:rotate-ccw" className="w-4 h-4" />
           Reset
         </Button>
@@ -86,21 +86,29 @@ export const TicTacToeGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-renaissance-800 bg-opacity-60 backdrop-blur-sm rounded-lg p-8 border border-parchment-400 text-center"
+        className="bg-brown-100/5 backdrop-blur-sm rounded-lg p-8 border border-brown-100/20 text-center"
       >
         {winner && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 bg-gold-400 bg-opacity-20 rounded-lg border border-gold-400"
+            className="mb-6 p-4 bg-gold/20 rounded-lg border border-gold"
           >
-            <p className="text-gold-400 font-serif text-xl">
+            <p className="text-gold font-im text-xl">
               {winner === 'tie' ? 'A draw! Well played.' : 
                winner === 'X' ? 'Victory is thine!' : 
                'Thy doppelganger prevails!'}
             </p>
           </motion.div>
         )}
+
+        <div className="mb-4">
+          <p className="text-brown-100/80 font-lato">
+            {!winner && (isPlayerTurn ? 
+              "Thy turn, choose wisely..." : 
+              "Thy doppelganger ponders their move...")}
+          </p>
+        </div>
 
         <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto mb-6">
           {board.map((cell, index) => (
@@ -109,19 +117,21 @@ export const TicTacToeGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => makeMove(index)}
-              className="aspect-square bg-parchment-200 rounded-lg text-4xl font-bold text-renaissance-800 hover:bg-parchment-100 transition-colors duration-200 disabled:cursor-not-allowed"
+              className="aspect-square bg-brown-100 rounded-lg text-4xl font-bold text-brown-800 hover:bg-gold/20 hover:text-brown-800 transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50 border-2 border-brown-300/20 hover:border-gold/40"
               disabled={!!cell || !!winner || !isPlayerTurn}
             >
-              {cell}
+              <span className={cell === 'X' ? 'text-brown-800' : cell === 'O' ? 'text-brown-300' : ''}>
+                {cell}
+              </span>
             </motion.button>
           ))}
         </div>
 
-        <p className="text-parchment-300 italic">
-          {!winner && (isPlayerTurn ? 
-            "Thy turn, choose wisely..." : 
-            "Thy doppelganger ponders their move...")}
-        </p>
+        <div className="text-center">
+          <p className="text-brown-100/70 italic font-im">
+            "A peasant's game? Nay — a battlefield of cunning in nine squares."
+          </p>
+        </div>
       </motion.div>
     </div>
   );

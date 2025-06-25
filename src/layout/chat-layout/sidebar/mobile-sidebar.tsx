@@ -3,6 +3,7 @@ import type { ReactNode } from "react"
 import { motion, AnimatePresence } from "motion/react"
 import { Icon } from "@iconify/react"
 import Image from "@/components/image"
+import { useNavigate } from "react-router-dom"
 
 interface MobileNavItemProps {
   children: ReactNode
@@ -52,9 +53,15 @@ const MobileNavItem = ({ children, label, onClick, delay = 0 }: MobileNavItemPro
 }
 
 export default function MobileSidebar() {
+  const navigate = useNavigate();
   const { expand, setExpand } = useSidebarStore()
 
   const closeSidebar = () => setExpand(false)
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    closeSidebar();
+  };
 
   return (
     <>
@@ -120,7 +127,7 @@ export default function MobileSidebar() {
               <MobileNavItem 
                 label="New Chat" 
                 delay={0.15}
-                onClick={closeSidebar}
+                onClick={() => handleNavigation("/chat")}
               >
                 <Image src="/favicon.ico" width={24} height={24} alt="Home" />
               </MobileNavItem>
@@ -128,7 +135,7 @@ export default function MobileSidebar() {
               <MobileNavItem 
                 label="Joust Centre" 
                 delay={0.2}
-                onClick={closeSidebar}
+                onClick={() => handleNavigation("/chat/games")}
               >
                 <Icon icon="ri:chess-fill" className="w-6 h-6" />
               </MobileNavItem>

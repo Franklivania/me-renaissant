@@ -87,14 +87,14 @@ export const GlyphsGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
-        <Button variant="ghost" onClick={onBack}>
+        <Button variant="ghost" onClick={onBack} className="text-brown-100 hover:text-gold">
           <Icon icon="lucide:arrow-left" className="w-4 h-4 mr-2" />
           Back to Games
         </Button>
-        <h1 className="text-2xl font-serif font-bold text-parchment-100">
+        <h1 className="text-2xl font-im font-bold text-brown-100">
           House of Glyphs
         </h1>
-        <Button variant="ghost" onClick={initializeGame}>
+        <Button variant="ghost" onClick={initializeGame} className="text-brown-100 hover:text-gold">
           <Icon icon="lucide:rotate-ccw" className="w-4 h-4" />
           Reset
         </Button>
@@ -103,19 +103,20 @@ export const GlyphsGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-renaissance-800 bg-opacity-60 backdrop-blur-sm rounded-lg p-8 border border-parchment-400"
+        className="bg-brown-100/5 backdrop-blur-sm rounded-lg p-8 border border-brown-100/20"
       >
         <div className="text-center mb-6">
-          <p className="text-parchment-200 mb-2">
-            Moves: {moves} | Matches: {matches}/{GLYPHS.length}
+          <p className="text-brown-100/80 mb-2 font-lato">
+            Moves: <span className="text-gold font-semibold">{moves}</span> | 
+            Matches: <span className="text-gold font-semibold">{matches}</span>/{GLYPHS.length}
           </p>
           {isComplete && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-4 bg-gold-400 bg-opacity-20 rounded-lg border border-gold-400"
+              className="p-4 bg-gold/20 rounded-lg border border-gold"
             >
-              <p className="text-gold-400 font-serif text-xl">
+              <p className="text-gold font-im text-xl">
                 The glyphs have revealed their secrets! Victory in {moves} moves.
               </p>
             </motion.div>
@@ -134,17 +135,19 @@ export const GlyphsGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               >
                 <div className="relative w-full h-full">
                   <motion.div
-                    className={`absolute inset-0 rounded-lg border-2 backface-hidden ${
+                    className={`absolute inset-0 rounded-lg border-2 backface-hidden transition-all duration-300 ${
                       card.isFlipped || card.isMatched
-                        ? 'bg-parchment-200 border-gold-400 text-renaissance-800'
-                        : 'bg-renaissance-700 border-parchment-400'
+                        ? 'bg-brown-100 border-gold text-brown-800'
+                        : 'bg-brown-300/20 border-brown-100/40 hover:border-brown-100/60'
                     }`}
                     style={{
                       transform: card.isFlipped || card.isMatched ? 'rotateY(0deg)' : 'rotateY(0deg)',
                     }}
                   >
                     <div className="flex items-center justify-center h-full text-3xl">
-                      {card.isFlipped || card.isMatched ? card.glyph : '?'}
+                      {card.isFlipped || card.isMatched ? card.glyph : (
+                        <Icon icon="mdi:help" className="w-8 h-8 text-brown-100/60" />
+                      )}
                     </div>
                   </motion.div>
                 </div>
@@ -154,7 +157,7 @@ export const GlyphsGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </div>
 
         <div className="text-center mt-6">
-          <p className="text-parchment-300 italic">
+          <p className="text-brown-100/70 italic font-im">
             "In the dance of memory and meaning, truth reveals itself to those who seek..."
           </p>
         </div>
