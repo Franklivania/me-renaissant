@@ -42,7 +42,7 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </h3>
         <Button
           variant="ghost"
-          onClick={initializeGame}
+          onClick={resetGame}
           className="text-brown-100 hover:text-gold flex items-center"
         >
           <Icon icon="lucide:rotate-ccw" className="w-4 h-4" />
