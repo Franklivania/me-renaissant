@@ -11,19 +11,19 @@ import { useSearchParams } from 'react-router-dom';
 export default function ChatPage() {
   const [searchParams] = useSearchParams();
   const conversationId = searchParams.get('chat');
-  
+
   const { doppelganger, isConnected: profileConnected } = useProfileStore();
-  const { 
-    messages, 
-    isLoading, 
-    isTyping, 
+  const {
+    messages,
+    isLoading,
+    isTyping,
     isConnected: chatConnected,
-    loadConversationHistory, 
-    addMessage, 
+    loadConversationHistory,
+    addMessage,
     setTyping,
     testConnection
   } = useChatStore();
-  
+
   const [inputMessage, setInputMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'testing'>('testing');
@@ -35,7 +35,7 @@ export default function ChatPage() {
       setConnectionStatus('testing');
       const connected = await testConnection();
       setConnectionStatus(connected ? 'connected' : 'disconnected');
-      
+
       if (connected) {
         await loadConversationHistory(conversationId || undefined);
       }
@@ -51,7 +51,7 @@ export default function ChatPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!inputMessage.trim() || !doppelganger || isSending) return;
 
     const userMessage = inputMessage.trim();
@@ -90,7 +90,7 @@ export default function ChatPage() {
 
     } catch (error) {
       console.error('Error sending message:', error);
-      
+
       // Add fallback response if AI fails
       await addMessage({
         session_id: '',
@@ -118,32 +118,16 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-full max-h-screen">
+    <div className="flex flex-col h-full">
       {/* Chat Header */}
       <div className="flex-shrink-0 p-4 border-b border-brown-100/20">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-brown-100/20 flex items-center justify-center">
-              <Icon icon="mdi:account-circle" className="w-6 h-6 text-brown-100" />
-            </div>
-            <div>
-              <h3 className="text-brown-100 font-im text-lg">{doppelganger.name}</h3>
-              <p className="text-brown-100/60 text-sm">{doppelganger.title}</p>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-brown-100/20 flex items-center justify-center">
+            <Icon icon="mdi:account-circle" className="w-6 h-6 text-brown-100" />
           </div>
-          
-          {/* Connection Status */}
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${
-              connectionStatus === 'connected' ? 'bg-green-400' :
-              connectionStatus === 'disconnected' ? 'bg-red-400' :
-              'bg-yellow-400'
-            }`} />
-            <span className="text-xs text-brown-100/60">
-              {connectionStatus === 'connected' ? 'Connected' :
-               connectionStatus === 'disconnected' ? 'Offline' :
-               'Connecting...'}
-            </span>
+          <div>
+            <h3 className="text-brown-100 font-im text-lg">{doppelganger.name}</h3>
+            <p className="text-brown-100/60 text-sm">{doppelganger.title}</p>
           </div>
         </div>
       </div>
@@ -164,7 +148,7 @@ export default function ChatPage() {
                 Greetings, kindred soul!
               </h3>
               <p className="text-brown-100/70 max-w-md mx-auto">
-                I am {doppelganger.name}, thy Renaissance mirror. What wisdom or wonder 
+                I am {doppelganger.name}, thy Renaissance mirror. What wisdom or wonder
                 shall we explore together across the centuries?
               </p>
             </motion.div>
@@ -195,18 +179,17 @@ export default function ChatPage() {
             >
               <div className={`max-w-[80%] ${message.sender === 'user' ? 'order-2' : 'order-1'}`}>
                 <div
-                  className={`p-3 rounded-lg ${
-                    message.sender === 'user'
-                      ? 'bg-brown-100 text-brown-800 rounded-br-sm'
-                      : 'bg-brown-100/10 text-brown-100 rounded-bl-sm border border-brown-100/20'
-                  }`}
+                  className={`p-3 rounded-lg ${message.sender === 'user'
+                    ? 'bg-brown-100 text-brown-800 rounded-br-sm'
+                    : 'bg-brown-100/10 text-brown-100 rounded-bl-sm border border-brown-100/20'
+                    }`}
                 >
                   <p className="text-sm leading-relaxed">{message.message}</p>
                 </div>
                 <p className="text-xs text-brown-100/40 mt-1 px-2">
-                  {new Date(message.created_at).toLocaleTimeString([], { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
+                  {new Date(message.created_at).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit'
                   })}
                 </p>
               </div>
@@ -241,7 +224,7 @@ export default function ChatPage() {
             </motion.div>
           )}
         </AnimatePresence>
-        
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -254,7 +237,7 @@ export default function ChatPage() {
             </p>
           </div>
         )}
-        
+
         <form onSubmit={handleSendMessage} className="flex gap-2">
           <div className="flex-1">
             <Input
@@ -267,11 +250,12 @@ export default function ChatPage() {
           </div>
           <Button
             type="submit"
+            size="sm"
+            radius="curved"
             disabled={!inputMessage.trim() || isSending}
             loading={isSending}
-            className="px-4"
           >
-            <Icon icon="mdi:send" className="w-5 h-5" />
+            {!isSending && <Icon icon="streamline-cyber:quill" className="w-5 h-5" />}
           </Button>
         </form>
       </div>

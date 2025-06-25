@@ -43,7 +43,7 @@ export class GroqService {
       const response = await axios.post<GroqResponse>(
         this.API_URL,
         {
-          model: 'meta-llama/llama-3.1-70b-versatile',
+          model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
           messages,
           temperature: 0.8,
           max_tokens: 500,
@@ -64,6 +64,7 @@ export class GroqService {
       return this.getFallbackResponse(doppelganger);
     }
   }
+
 
   private static createSystemPrompt(doppelganger: DoppelgangerPersona): string {
     return `You are ${doppelganger.name}, ${doppelganger.title}. You are a Renaissance-era doppelganger, a mirror soul from the past.

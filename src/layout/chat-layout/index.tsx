@@ -6,7 +6,7 @@ export default function ChatLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <div className="w-full h-screen flex overflow-hidden bg-brown-800">
       <Sidebar />
-      <main className="w-full flex flex-col gap-4 text-brown-100">
+      <main className="w-full flex flex-col gap-1 text-brown-100">
         <Topnav />
         <section
           role="presentation"

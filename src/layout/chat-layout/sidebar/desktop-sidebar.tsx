@@ -120,8 +120,8 @@ export default function DesktopSidebar() {
   };
 
   const handleDeleteConversation = async (conversationId: string) => {
-    const success = await deleteConversation(conversationId);
-    if (success && currentChat === conversationId) {
+    await deleteConversation(conversationId);
+    if (currentChat === conversationId) {
       navigate("/chat");
     }
   };
@@ -152,18 +152,6 @@ export default function DesktopSidebar() {
         >
           <Icon icon="ri:chess-fill" className="w-5 h-5" />
         </NavItem>
-
-        {/* Connection Status */}
-        {expand && (
-          <div className="px-3 py-2 mt-2">
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`} />
-              <span className="text-xs text-brown-100/60">
-                {isConnected ? 'Connected' : 'Offline'}
-              </span>
-            </div>
-          </div>
-        )}
 
         {/* Conversations Section */}
         {expand && conversations.length > 0 && (
