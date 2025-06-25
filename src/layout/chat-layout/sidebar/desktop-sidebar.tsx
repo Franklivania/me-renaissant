@@ -3,14 +3,16 @@ import type { ReactNode } from "react"
 import { motion, AnimatePresence } from "motion/react"
 import { Icon } from "@iconify/react"
 import Image from "@/components/image"
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { useNavigate, useSearchParams } from "react-router-dom"
+import { useChatStore } from "@/store/useChatStore"
 
-const NavItem = ({ children, label, expand, onClick }: {
+const NavItem = ({ children, label, expand, onClick, isActive = false }: {
   children: ReactNode,
   label: string,
   expand: boolean,
-  onClick?: () => void
+  onClick?: () => void,
+  isActive?: boolean
 }) => {
   const [showTooltip, setShowTooltip] = useState(false)
 
@@ -19,7 +21,11 @@ const NavItem = ({ children, label, expand, onClick }: {
       <motion.button
         type="button"
         onClick={onClick}
-        className="flex items-center w-full rounded-xl p-3 hover:bg-brown-100/10 transition-colors text-brown-100 text-left group"
+        className={`flex items-center w-full rounded-xl p-3 transition-colors text-brown-100 text-left group ${
+          isActive 
+            ? 'bg-brown-100/20 text-brown-100' 
+            : 'hover:bg-brown-100/10'
+        }`}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onMouseEnter={() => !expand && setShowTooltip(true)}
@@ -40,7 +46,7 @@ const NavItem = ({ children, label, expand, onClick }: {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
               transition={{ duration: 0.2, delay: 0.1 }}
-              className="ml-3 text-sm font-medium whitespace-nowrap"
+              className="ml-3 text-sm font-medium whitespace-nowrap truncate"
             >
               {label}
             </motion.span>
@@ -67,7 +73,26 @@ const NavItem = ({ children, label, expand, onClick }: {
 
 export default function DesktopSidebar() {
   const navigate = useNavigate();
-  const { expand, toggleExpand } = useSidebarStore()
+  const [searchParams] = useSearchParams();
+  const currentChat = searchParams.get('chat');
+  const { expand, toggleExpand } = useSidebarStore();
+  const { conversations, loadConversations } = useChatStore();
+
+  useEffect(() => {
+    loadConversations();
+  }, [loadConversations]);
+
+  const handleNewChat = () => {
+    navigate("/chat");
+  };
+
+  const handleConversationClick = (conversationId: string) => {
+    if (conversationId === 'default') {
+      navigate("/chat");
+    } else {
+      navigate(`/chat?chat=${conversationId}`);
+    }
+  };
 
   return (
     <motion.menu
@@ -80,22 +105,49 @@ export default function DesktopSidebar() {
     >
       <div className="flex flex-col gap-1">
         <NavItem
-          label="Me RenAIssant" expand={expand}
-          onClick={() => navigate("/chat")}
+          label="New Chat" 
+          expand={expand}
+          onClick={handleNewChat}
+          isActive={!currentChat}
         >
-          <Image src="/favicon.ico" width={24} height={24} alt="Me RenAIssant" />
+          <Icon icon="mdi:plus" className="w-5 h-5" />
         </NavItem>
 
         <NavItem
-          label="Joust Centre" expand={expand}
+          label="Joust Centre" 
+          expand={expand}
           onClick={() => navigate("/chat/games")}
         >
           <Icon icon="ri:chess-fill" className="w-5 h-5" />
         </NavItem>
 
-        <NavItem label="Play Music" expand={expand}>
-          <Icon icon="weui:music-filled" className="w-5 h-5" />
-        </NavItem>
+        {/* Conversations Section */}
+        {expand && conversations.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-4"
+          >
+            <div className="px-3 py-2">
+              <h3 className="text-xs font-semibold text-brown-100/60 uppercase tracking-wider">
+                Recent Conversations
+              </h3>
+            </div>
+            <div className="space-y-1 max-h-64 overflow-y-auto">
+              {conversations.slice(0, 10).map((conversation) => (
+                <NavItem
+                  key={conversation.id}
+                  label={conversation.title}
+                  expand={expand}
+                  onClick={() => handleConversationClick(conversation.id)}
+                  isActive={currentChat === conversation.id}
+                >
+                  <Icon icon="mdi:chat-outline" className="w-4 h-4" />
+                </NavItem>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </div>
 
       <div className="mt-auto">
