@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components";
 import { RadioOption } from "@/components/form/radio-option";
+import { useProfileStore } from "@/store/useProfileStore";
 
 interface CurrentRoleProps {
   onContinue?: () => void;
@@ -18,7 +19,14 @@ const options = [
 ];
 
 export default function CurrentRole({ onContinue }: CurrentRoleProps) {
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const { onboardingData, updateOnboardingField } = useProfileStore();
+  const [selectedRole, setSelectedRole] = useState<string>(onboardingData.role || '');
+
+  useEffect(() => {
+    if (selectedRole) {
+      updateOnboardingField('role', selectedRole);
+    }
+  }, [selectedRole, updateOnboardingField]);
 
   const handleChange = (value: string) => {
     setSelectedRole(value);
@@ -26,7 +34,7 @@ export default function CurrentRole({ onContinue }: CurrentRoleProps) {
 
   const handleContinue = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onContinue) {
+    if (selectedRole && onContinue) {
       onContinue();
     }
   };

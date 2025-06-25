@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components";
 import { RadioOption } from "@/components/form/radio-option";
+import { useProfileStore } from "@/store/useProfileStore";
 
 interface GenderProps {
   onContinue?: () => void;
@@ -14,7 +15,14 @@ const options = [
 ];
 
 export default function Gender({ onContinue }: GenderProps) {
-  const [selectedGender, setSelectedGender] = useState<string | null>(null);
+  const { onboardingData, updateOnboardingField } = useProfileStore();
+  const [selectedGender, setSelectedGender] = useState<string>(onboardingData.gender || '');
+
+  useEffect(() => {
+    if (selectedGender) {
+      updateOnboardingField('gender', selectedGender);
+    }
+  }, [selectedGender, updateOnboardingField]);
 
   const handleChange = (value: string) => {
     setSelectedGender(value);
@@ -22,7 +30,7 @@ export default function Gender({ onContinue }: GenderProps) {
 
   const handleContinue = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onContinue) {
+    if (selectedGender && onContinue) {
       onContinue();
     }
   };
@@ -33,7 +41,7 @@ export default function Gender({ onContinue }: GenderProps) {
 
       <form className="w-full my-auto flex flex-col space-y-5" onSubmit={handleContinue}>
         <>
-          <span className="font-im text-lg text-brown-100">2. Select thy gender — as thou wilt.</span>
+          <span className="font-im text-lg text-brown-100">3. Select thy gender — as thou wilt.</span>
           <small className="ml-auto text-brown-100 opacity-40">select one</small>
         </>
 

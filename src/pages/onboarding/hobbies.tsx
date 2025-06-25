@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components";
 import { CheckOption } from "@/components/form/check-option";
+import { useProfileStore } from "@/store/useProfileStore";
 
 interface HobbiesProps {
   onContinue?: () => void;
@@ -34,7 +35,12 @@ const options = [
 ];
 
 export default function Hobbies({ onContinue }: HobbiesProps) {
-  const [selectedHobbies, setSelectedHobbies] = useState<string[]>([]);
+  const { onboardingData, updateOnboardingField } = useProfileStore();
+  const [selectedHobbies, setSelectedHobbies] = useState<string[]>(onboardingData.hobbies || []);
+
+  useEffect(() => {
+    updateOnboardingField('hobbies', selectedHobbies);
+  }, [selectedHobbies, updateOnboardingField]);
 
   const handleChange = (value: string) => {
     setSelectedHobbies((prev) =>
@@ -46,7 +52,7 @@ export default function Hobbies({ onContinue }: HobbiesProps) {
 
   const handleContinue = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onContinue) {
+    if (selectedHobbies.length > 0 && onContinue) {
       onContinue();
     }
   };
@@ -57,7 +63,7 @@ export default function Hobbies({ onContinue }: HobbiesProps) {
 
       <form className="w-full my-auto flex flex-col space-y-5" onSubmit={handleContinue}>
         <>
-          <span className="font-im text-lg text-brown-100">3. Select thy hobbies — as many as thy heart desires.</span>
+          <span className="font-im text-lg text-brown-100">4. Select thy hobbies — as many as thy heart desires.</span>
           <small className="ml-auto text-brown-100 opacity-40">select one or more</small>
         </>
 

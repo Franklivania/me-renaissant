@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components";
 import { RadioOption } from "@/components/form/radio-option";
+import { useProfileStore } from "@/store/useProfileStore";
 
 interface PreferredDrinkProps {
   onContinue?: () => void;
@@ -16,7 +17,14 @@ const options = [
 ];
 
 export default function PreferredDrink({ onContinue }: PreferredDrinkProps) {
-  const [selectedDrink, setSelectedDrink] = useState<string | null>(null);
+  const { onboardingData, updateOnboardingField } = useProfileStore();
+  const [selectedDrink, setSelectedDrink] = useState<string>(onboardingData.drink || '');
+
+  useEffect(() => {
+    if (selectedDrink) {
+      updateOnboardingField('drink', selectedDrink);
+    }
+  }, [selectedDrink, updateOnboardingField]);
 
   const handleChange = (value: string) => {
     setSelectedDrink(value);
@@ -24,7 +32,7 @@ export default function PreferredDrink({ onContinue }: PreferredDrinkProps) {
 
   const handleContinue = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onContinue) {
+    if (selectedDrink && onContinue) {
       onContinue();
     }
   };
@@ -35,7 +43,7 @@ export default function PreferredDrink({ onContinue }: PreferredDrinkProps) {
 
       <form className="w-full my-auto flex flex-col space-y-5" onSubmit={handleContinue}>
         <>
-          <span className="font-im text-lg text-brown-100">3. Select thy preferred drink — for every hero needs a draught.</span>
+          <span className="font-im text-lg text-brown-100">5. Select thy preferred drink — for every hero needs a draught.</span>
           <small className="ml-auto text-brown-100 opacity-40">select one</small>
         </>
 

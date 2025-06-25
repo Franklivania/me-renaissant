@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components";
 import { RadioOption } from "@/components/form/radio-option";
+import { useProfileStore } from "@/store/useProfileStore";
 
 interface PreferredHomeProps {
   onContinue?: () => void;
@@ -16,7 +17,14 @@ const options = [
 ];
 
 export default function PreferredHome({ onContinue }: PreferredHomeProps) {
-  const [selectedHome, setSelectedHome] = useState<string | null>(null);
+  const { onboardingData, updateOnboardingField } = useProfileStore();
+  const [selectedHome, setSelectedHome] = useState<string>(onboardingData.preferredHome || '');
+
+  useEffect(() => {
+    if (selectedHome) {
+      updateOnboardingField('preferredHome', selectedHome);
+    }
+  }, [selectedHome, updateOnboardingField]);
 
   const handleChange = (value: string) => {
     setSelectedHome(value);
@@ -24,7 +32,7 @@ export default function PreferredHome({ onContinue }: PreferredHomeProps) {
 
   const handleContinue = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onContinue) {
+    if (selectedHome && onContinue) {
       onContinue();
     }
   };
@@ -35,7 +43,7 @@ export default function PreferredHome({ onContinue }: PreferredHomeProps) {
 
       <form className="w-full my-auto flex flex-col space-y-5" onSubmit={handleContinue}>
         <>
-          <span className="font-im text-lg text-brown-100">2. Select thy preferred home — for every journey starts somewhere.</span>
+          <span className="font-im text-lg text-brown-100">6. Select thy preferred home — for every journey starts somewhere.</span>
           <small className="ml-auto text-brown-100 opacity-40">select one</small>
         </>
 
