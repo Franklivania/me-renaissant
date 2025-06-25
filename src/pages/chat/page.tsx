@@ -7,6 +7,7 @@ import { useProfileStore } from '@/store/useProfileStore';
 import { useChatStore } from '@/store/useChatStore';
 import { GroqService } from '@/services/groq-service';
 import { useSearchParams } from 'react-router-dom';
+import { ChatActions } from '@/components/chat-actions';
 
 export default function ChatPage() {
   const [searchParams] = useSearchParams();
@@ -117,18 +118,33 @@ export default function ChatPage() {
     );
   }
 
+  const conversationTitle = conversationId 
+    ? `Chat ${conversationId.slice(0, 8)}` 
+    : 'Main Conversation';
+
   return (
     <div className="flex flex-col h-full">
       {/* Chat Header */}
       <div className="flex-shrink-0 p-4 border-b border-brown-100/20">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-brown-100/20 flex items-center justify-center">
-            <Icon icon="mdi:account-circle" className="w-6 h-6 text-brown-100" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-brown-100/20 flex items-center justify-center">
+              <Icon icon="mdi:account-circle" className="w-6 h-6 text-brown-100" />
+            </div>
+            <div>
+              <h3 className="text-brown-100 font-im text-lg">{doppelganger.name}</h3>
+              <p className="text-brown-100/60 text-sm">{doppelganger.title}</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-brown-100 font-im text-lg">{doppelganger.name}</h3>
-            <p className="text-brown-100/60 text-sm">{doppelganger.title}</p>
-          </div>
+
+          {/* Chat Actions */}
+          {messages.length > 0 && (
+            <ChatActions
+              conversationId={conversationId || 'default'}
+              conversationTitle={conversationTitle}
+              messages={messages}
+            />
+          )}
         </div>
       </div>
 

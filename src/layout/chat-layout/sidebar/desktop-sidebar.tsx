@@ -5,17 +5,18 @@ import { Icon } from "@iconify/react"
 import { useState, useEffect } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { useChatStore } from "@/store/useChatStore"
+import { ChatActions } from "@/components/chat-actions"
 
-const NavItem = ({ children, label, expand, onClick, isActive = false, onDelete }: {
+const NavItem = ({ children, label, expand, onClick, isActive = false, conversationId, showActions = false }: {
   children: ReactNode,
   label: string,
   expand: boolean,
   onClick?: () => void,
   isActive?: boolean,
-  onDelete?: () => void
+  conversationId?: string,
+  showActions?: boolean
 }) => {
   const [showTooltip, setShowTooltip] = useState(false)
-  const [showDeleteButton, setShowDeleteButton] = useState(false)
 
   return (
     <div className="relative group">
@@ -31,11 +32,9 @@ const NavItem = ({ children, label, expand, onClick, isActive = false, onDelete 
         whileTap={{ scale: 0.98 }}
         onMouseEnter={() => {
           if (!expand) setShowTooltip(true);
-          if (onDelete) setShowDeleteButton(true);
         }}
         onMouseLeave={() => {
           setShowTooltip(false);
-          setShowDeleteButton(false);
         }}
       >
         <motion.span
@@ -60,20 +59,18 @@ const NavItem = ({ children, label, expand, onClick, isActive = false, onDelete 
           )}
         </AnimatePresence>
 
-        {/* Delete button for conversations */}
-        {onDelete && expand && showDeleteButton && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            className="ml-2 p-1 rounded-md hover:bg-red-400/20 text-red-400 hover:text-red-300 transition-colors"
-          >
-            <Icon icon="mdi:delete-outline" className="w-4 h-4" />
-          </motion.button>
+        {/* Actions button for conversations */}
+        {showActions && expand && conversationId && (
+          <div className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <ChatActions
+              conversationId={conversationId}
+              conversationTitle={label}
+              onActionComplete={() => {
+                // Refresh conversations after action
+                window.location.reload();
+              }}
+            />
+          </div>
         )}
       </motion.button>
 
@@ -99,7 +96,7 @@ export default function DesktopSidebar() {
   const [searchParams] = useSearchParams();
   const currentChat = searchParams.get('chat');
   const { expand, toggleExpand } = useSidebarStore();
-  const { conversations, loadConversations, deleteConversation, isConnected } = useChatStore();
+  const { conversations, loadConversations, isConnected } = useChatStore();
 
   useEffect(() => {
     if (isConnected) {
@@ -108,7 +105,9 @@ export default function DesktopSidebar() {
   }, [loadConversations, isConnected]);
 
   const handleNewChat = () => {
-    navigate("/chat");
+    // Generate new conversation ID and navigate
+    const newChatId = crypto.randomUUID();
+    navigate(`/chat?chat=${newChatId}`);
   };
 
   const handleConversationClick = (conversationId: string) => {
@@ -116,13 +115,6 @@ export default function DesktopSidebar() {
       navigate("/chat");
     } else {
       navigate(`/chat?chat=${conversationId}`);
-    }
-  };
-
-  const handleDeleteConversation = async (conversationId: string) => {
-    await deleteConversation(conversationId);
-    if (currentChat === conversationId) {
-      navigate("/chat");
     }
   };
 
@@ -140,7 +132,7 @@ export default function DesktopSidebar() {
           label="New Chat" 
           expand={expand}
           onClick={handleNewChat}
-          isActive={!currentChat}
+          isActive={false}
         >
           <Icon icon="mdi:plus" className="w-5 h-5" />
         </NavItem>
@@ -165,7 +157,7 @@ export default function DesktopSidebar() {
                 Recent Conversations
               </h3>
             </div>
-            <div className="space-y-1 max-h-64 overflow-x-hidden">
+            <div className="space-y-1 max-h-64 overflow-x-hidden overflow-y-auto">
               {conversations.slice(0, 10).map((conversation) => (
                 <NavItem
                   key={conversation.id}
@@ -173,7 +165,8 @@ export default function DesktopSidebar() {
                   expand={expand}
                   onClick={() => handleConversationClick(conversation.id)}
                   isActive={currentChat === conversation.id}
-                  onDelete={conversation.id !== 'default' ? () => handleDeleteConversation(conversation.id) : undefined}
+                  conversationId={conversation.id}
+                  showActions={conversation.id !== 'default'}
                 >
                   <Icon icon="mdi:chat-outline" className="w-4 h-4" />
                 </NavItem>

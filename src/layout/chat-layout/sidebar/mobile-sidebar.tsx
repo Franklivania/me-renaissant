@@ -6,6 +6,7 @@ import Image from "@/components/image"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { useChatStore } from "@/store/useChatStore"
 import { useEffect } from "react"
+import { ChatActions } from "@/components/chat-actions"
 
 interface MobileNavItemProps {
   children: ReactNode
@@ -13,9 +14,19 @@ interface MobileNavItemProps {
   onClick?: () => void
   delay?: number
   isActive?: boolean
+  conversationId?: string
+  showActions?: boolean
 }
 
-const MobileNavItem = ({ children, label, onClick, delay = 0, isActive = false }: MobileNavItemProps) => {
+const MobileNavItem = ({ 
+  children, 
+  label, 
+  onClick, 
+  delay = 0, 
+  isActive = false,
+  conversationId,
+  showActions = false
+}: MobileNavItemProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, x: -30 }}
@@ -26,9 +37,7 @@ const MobileNavItem = ({ children, label, onClick, delay = 0, isActive = false }
         ease: [0.4, 0, 0.2, 1]
       }}
     >
-      <motion.button
-        type="button"
-        onClick={onClick}
+      <motion.div
         className={`flex items-center w-full rounded-xl p-4 transition-all text-brown-100 text-left group touch-manipulation ${
           isActive 
             ? 'bg-brown-100/20 text-brown-100' 
@@ -37,24 +46,43 @@ const MobileNavItem = ({ children, label, onClick, delay = 0, isActive = false }
         whileHover={{ scale: 1.02, x: 4 }}
         whileTap={{ scale: 0.98 }}
       >
-        <motion.span 
-          className="flex-shrink-0 text-xl mr-4"
-          whileHover={{ scale: 1.1 }}
-          transition={{ duration: 0.2 }}
+        <button
+          onClick={onClick}
+          className="flex items-center flex-1"
         >
-          {children}
-        </motion.span>
-        
-        <span className="text-base font-medium truncate">{label}</span>
-        
-        <motion.div
-          className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
-          initial={{ x: -10 }}
-          whileHover={{ x: 0 }}
-        >
-          <Icon icon="lucide:chevron-right" className="w-5 h-5 text-brown-100/60" />
-        </motion.div>
-      </motion.button>
+          <motion.span 
+            className="flex-shrink-0 text-xl mr-4"
+            whileHover={{ scale: 1.1 }}
+            transition={{ duration: 0.2 }}
+          >
+            {children}
+          </motion.span>
+          
+          <span className="text-base font-medium truncate flex-1">{label}</span>
+          
+          <motion.div
+            className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
+            initial={{ x: -10 }}
+            whileHover={{ x: 0 }}
+          >
+            <Icon icon="lucide:chevron-right" className="w-5 h-5 text-brown-100/60" />
+          </motion.div>
+        </button>
+
+        {/* Actions for conversations */}
+        {showActions && conversationId && (
+          <div className="ml-2">
+            <ChatActions
+              conversationId={conversationId}
+              conversationTitle={label}
+              onActionComplete={() => {
+                // Refresh conversations after action
+                window.location.reload();
+              }}
+            />
+          </div>
+        )}
+      </motion.div>
     </motion.div>
   )
 }
@@ -64,19 +92,25 @@ export default function MobileSidebar() {
   const [searchParams] = useSearchParams();
   const currentChat = searchParams.get('chat');
   const { expand, setExpand } = useSidebarStore();
-  const { conversations, loadConversations } = useChatStore();
+  const { conversations, loadConversations, isConnected } = useChatStore();
 
   useEffect(() => {
-    if (expand) {
+    if (expand && isConnected) {
       loadConversations();
     }
-  }, [expand, loadConversations]);
+  }, [expand, loadConversations, isConnected]);
 
   const closeSidebar = () => setExpand(false);
 
   const handleNavigation = (path: string) => {
     navigate(path);
     closeSidebar();
+  };
+
+  const handleNewChat = () => {
+    // Generate new conversation ID and navigate
+    const newChatId = crypto.randomUUID();
+    handleNavigation(`/chat?chat=${newChatId}`);
   };
 
   const handleConversationClick = (conversationId: string) => {
@@ -151,8 +185,8 @@ export default function MobileSidebar() {
               <MobileNavItem 
                 label="New Chat" 
                 delay={0.15}
-                onClick={() => handleNavigation("/chat")}
-                isActive={!currentChat}
+                onClick={handleNewChat}
+                isActive={false}
               >
                 <Icon icon="mdi:plus" className="w-6 h-6" />
               </MobileNavItem>
@@ -183,6 +217,8 @@ export default function MobileSidebar() {
                       delay={0.3 + index * 0.05}
                       onClick={() => handleConversationClick(conversation.id)}
                       isActive={currentChat === conversation.id}
+                      conversationId={conversation.id}
+                      showActions={conversation.id !== 'default'}
                     >
                       <Icon icon="mdi:chat-outline" className="w-5 h-5" />
                     </MobileNavItem>
