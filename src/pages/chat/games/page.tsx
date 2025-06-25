@@ -53,22 +53,22 @@ export default function GamesPage() {
             whileHover={{ scale: 1.02, y: -4 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => handleGameSelect(item.id)}
-            className="w-full flex flex-col items-center justify-center p-6 rounded-xl bg-brown-100/5 border-2 border-brown-100/20 hover:border-brown-100/40 hover:bg-brown-100/10 transition-all ease-in-out duration-300 group cursor-pointer"
+            className="w-full flex flex-col items-center justify-center p-6 rounded-xl hover:bg-brown-100/10 transition-all ease-in-out duration-300 group cursor-pointer"
           >
-            <div className="mb-4 p-4 rounded-full bg-brown-100/10 group-hover:bg-brown-100/20 transition-colors duration-300">
+            <div className="">
               <Image 
                 src={item.image} 
                 alt={item?.title} 
-                width={80} 
-                height={80} 
-                className="w-20 h-20 object-contain filter brightness-0 invert opacity-80 group-hover:opacity-100 transition-opacity duration-300" 
+                width={150} 
+                height={150} 
+                className="object-contain" 
               />
             </div>
             <div className="text-center">
-              <h3 className="text-brown-100 text-lg font-semibold mb-2 group-hover:text-gold transition-colors duration-300">
+              <h3 className="text-brown-100 font-semibold mb-2 group-hover:text-gold transition-colors duration-300">
                 {item?.title}
               </h3>
-              <p className="font-im opacity-70 text-brown-100/80 text-sm leading-relaxed">
+              <p className="font-im opacity-60 leading-relaxed">
                 {item?.desc}
               </p>
             </div>

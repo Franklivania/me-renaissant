@@ -29,7 +29,7 @@ export const GlyphsGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         isFlipped: false,
         isMatched: false,
       }));
-    
+
     setCards(shuffled);
     setFlippedCards([]);
     setMatches(0);
@@ -46,12 +46,12 @@ export const GlyphsGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       const [first, second] = flippedCards;
       const firstCard = cards[first];
       const secondCard = cards[second];
-      
+
       setMoves(prev => prev + 1);
 
       if (firstCard.glyph === secondCard.glyph) {
-        setCards(prev => prev.map(card => 
-          card.id === first || card.id === second 
+        setCards(prev => prev.map(card =>
+          card.id === first || card.id === second
             ? { ...card, isMatched: true }
             : card
         ));
@@ -63,8 +63,8 @@ export const GlyphsGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         }
       } else {
         setTimeout(() => {
-          setCards(prev => prev.map(card => 
-            card.id === first || card.id === second 
+          setCards(prev => prev.map(card =>
+            card.id === first || card.id === second
               ? { ...card, isFlipped: false }
               : card
           ));
@@ -78,7 +78,7 @@ export const GlyphsGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     if (flippedCards.length === 2) return;
     if (cards[id].isFlipped || cards[id].isMatched) return;
 
-    setCards(prev => prev.map(card => 
+    setCards(prev => prev.map(card =>
       card.id === id ? { ...card, isFlipped: true } : card
     ));
     setFlippedCards(prev => [...prev, id]);
@@ -87,16 +87,24 @@ export const GlyphsGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
-        <Button variant="ghost" onClick={onBack} className="text-brown-100 hover:text-gold">
+        <Button
+          variant="ghost"
+          onClick={onBack}
+          className="text-brown-100 hover:text-gold flex items-center"
+        >
           <Icon icon="lucide:arrow-left" className="w-4 h-4 mr-2" />
-          Back to Games
+          <span className="hidden sm:inline">Back to Games</span>
         </Button>
-        <h1 className="text-2xl font-im font-bold text-brown-100">
+        <h3 className="lg:font-2xl font-im font-bold text-brown-100 sm:block">
           House of Glyphs
-        </h1>
-        <Button variant="ghost" onClick={initializeGame} className="text-brown-100 hover:text-gold">
+        </h3>
+        <Button
+          variant="ghost"
+          onClick={initializeGame}
+          className="text-brown-100 hover:text-gold flex items-center"
+        >
           <Icon icon="lucide:rotate-ccw" className="w-4 h-4" />
-          Reset
+          <span className="hidden sm:inline ml-2">Reset</span>
         </Button>
       </div>
 
@@ -107,7 +115,7 @@ export const GlyphsGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       >
         <div className="text-center mb-6">
           <p className="text-brown-100/80 mb-2 font-lato">
-            Moves: <span className="text-gold font-semibold">{moves}</span> | 
+            Moves: <span className="text-gold font-semibold">{moves}</span> |
             Matches: <span className="text-gold font-semibold">{matches}</span>/{GLYPHS.length}
           </p>
           {isComplete && (
@@ -135,11 +143,10 @@ export const GlyphsGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               >
                 <div className="relative w-full h-full">
                   <motion.div
-                    className={`absolute inset-0 rounded-lg border-2 backface-hidden transition-all duration-300 ${
-                      card.isFlipped || card.isMatched
+                    className={`absolute inset-0 rounded-lg border-2 backface-hidden transition-all duration-300 ${card.isFlipped || card.isMatched
                         ? 'bg-brown-100 border-gold text-brown-800'
                         : 'bg-brown-300/20 border-brown-100/40 hover:border-brown-100/60'
-                    }`}
+                      }`}
                     style={{
                       transform: card.isFlipped || card.isMatched ? 'rotateY(0deg)' : 'rotateY(0deg)',
                     }}
