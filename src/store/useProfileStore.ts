@@ -16,8 +16,10 @@ interface ProfileState {
   // Loading states
   isLoading: boolean;
   isSyncing: boolean;
+  isConnected: boolean;
   
   // Actions
+  initializeProfile: () => Promise<void>;
   setOnboardingData: (data: Partial<OnboardingData>) => void;
   updateOnboardingField: <K extends keyof OnboardingData>(field: K, value: OnboardingData[K]) => void;
   completeOnboarding: () => Promise<void>;
@@ -25,6 +27,7 @@ interface ProfileState {
   generateDoppelganger: () => void;
   syncProfile: () => Promise<void>;
   clearProfile: () => void;
+  testConnection: () => Promise<boolean>;
 }
 
 export const useProfileStore = create<ProfileState>()(
@@ -37,6 +40,28 @@ export const useProfileStore = create<ProfileState>()(
       isOnboardingComplete: false,
       isLoading: false,
       isSyncing: false,
+      isConnected: false,
+
+      // Initialize profile and test connection
+      initializeProfile: async () => {
+        const connected = await get().testConnection();
+        
+        if (connected && !get().profile) {
+          await get().loadProfile();
+        }
+      },
+
+      testConnection: async () => {
+        try {
+          const connected = await SupabaseService.testConnection();
+          set({ isConnected: connected });
+          return connected;
+        } catch (error) {
+          console.error('Profile connection test failed:', error);
+          set({ isConnected: false });
+          return false;
+        }
+      },
 
       // Set complete onboarding data
       setOnboardingData: (data) => {
@@ -90,14 +115,16 @@ export const useProfileStore = create<ProfileState>()(
               profile,
               doppelganger,
               isOnboardingComplete: true,
-              isLoading: false
+              isLoading: false,
+              isConnected: true
             });
           } else {
             // If database save fails, still set local state
             set({
               doppelganger,
               isOnboardingComplete: true,
-              isLoading: false
+              isLoading: false,
+              isConnected: false
             });
             
             // Try to sync later
@@ -105,7 +132,7 @@ export const useProfileStore = create<ProfileState>()(
           }
         } catch (error) {
           console.error('Error completing onboarding:', error);
-          set({ isLoading: false });
+          set({ isLoading: false, isConnected: false });
         }
       },
 
@@ -132,14 +159,15 @@ export const useProfileStore = create<ProfileState>()(
               profile,
               doppelganger,
               isOnboardingComplete: true,
-              isLoading: false
+              isLoading: false,
+              isConnected: true
             });
           } else {
-            set({ isLoading: false });
+            set({ isLoading: false, isConnected: true });
           }
         } catch (error) {
           console.error('Error loading profile:', error);
-          set({ isLoading: false });
+          set({ isLoading: false, isConnected: false });
         }
       },
 
@@ -155,9 +183,9 @@ export const useProfileStore = create<ProfileState>()(
 
       // Sync local state with database
       syncProfile: async () => {
-        const { profile, doppelganger, onboardingData } = get();
+        const { profile, doppelganger, onboardingData, isSyncing } = get();
         
-        if (get().isSyncing) return; // Prevent concurrent syncs
+        if (isSyncing) return; // Prevent concurrent syncs
         
         set({ isSyncing: true });
 
@@ -179,7 +207,7 @@ export const useProfileStore = create<ProfileState>()(
 
             const newProfile = await SupabaseService.createProfile(profileData);
             if (newProfile) {
-              set({ profile: newProfile });
+              set({ profile: newProfile, isConnected: true });
             }
           } else if (profile && doppelganger) {
             // Update existing profile
@@ -192,11 +220,12 @@ export const useProfileStore = create<ProfileState>()(
 
             const updatedProfile = await SupabaseService.updateProfile(updates);
             if (updatedProfile) {
-              set({ profile: updatedProfile });
+              set({ profile: updatedProfile, isConnected: true });
             }
           }
         } catch (error) {
           console.error('Error syncing profile:', error);
+          set({ isConnected: false });
         } finally {
           set({ isSyncing: false });
         }

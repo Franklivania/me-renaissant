@@ -12,6 +12,21 @@ export class SupabaseService {
     return sessionId;
   }
 
+  // Test connection
+  static async testConnection(): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('count')
+        .limit(1);
+      
+      return !error;
+    } catch (error) {
+      console.error('Supabase connection test failed:', error);
+      return false;
+    }
+  }
+
   // Profile operations
   static async createProfile(profileData: Partial<UserProfile>): Promise<UserProfile | null> {
     try {
@@ -28,7 +43,7 @@ export class SupabaseService {
 
       if (error) {
         console.error('Error creating profile:', error);
-        return null;
+        throw error;
       }
 
       return data;
@@ -50,7 +65,7 @@ export class SupabaseService {
 
       if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
         console.error('Error fetching profile:', error);
-        return null;
+        throw error;
       }
 
       return data || null;
@@ -73,7 +88,7 @@ export class SupabaseService {
 
       if (error) {
         console.error('Error updating profile:', error);
-        return null;
+        throw error;
       }
 
       return data;
@@ -86,15 +101,22 @@ export class SupabaseService {
   // Conversation operations
   static async saveMessage(message: Omit<ConversationMessage, 'id' | 'created_at'>): Promise<ConversationMessage | null> {
     try {
+      const sessionId = this.getSessionId();
+      
+      const messageData = {
+        ...message,
+        session_id: sessionId
+      };
+
       const { data, error } = await supabase
         .from('conversations')
-        .insert(message)
+        .insert(messageData)
         .select()
         .single();
 
       if (error) {
         console.error('Error saving message:', error);
-        return null;
+        throw error;
       }
 
       return data;
@@ -104,25 +126,108 @@ export class SupabaseService {
     }
   }
 
-  static async getConversationHistory(): Promise<ConversationMessage[]> {
+  static async getConversationHistory(conversationId?: string): Promise<ConversationMessage[]> {
     try {
       const sessionId = this.getSessionId();
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('conversations')
         .select('*')
         .eq('session_id', sessionId)
         .order('created_at', { ascending: true });
 
+      // Filter by conversation ID if provided
+      if (conversationId) {
+        query = query.eq('persona_id', conversationId);
+      }
+
+      const { data, error } = await query;
+
       if (error) {
         console.error('Error fetching conversation history:', error);
-        return [];
+        throw error;
       }
 
       return data || [];
     } catch (error) {
       console.error('Error in getConversationHistory:', error);
       return [];
+    }
+  }
+
+  static async getConversationsList(): Promise<Array<{
+    id: string;
+    title: string;
+    lastMessage: string;
+    lastMessageTime: string;
+    messageCount: number;
+  }>> {
+    try {
+      const sessionId = this.getSessionId();
+      
+      const { data, error } = await supabase
+        .from('conversations')
+        .select('persona_id, message, created_at')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching conversations list:', error);
+        throw error;
+      }
+
+      // Group messages by persona_id to create conversation list
+      const conversationMap = new Map();
+      
+      data?.forEach(msg => {
+        const conversationId = msg.persona_id || 'default';
+        
+        if (!conversationMap.has(conversationId)) {
+          conversationMap.set(conversationId, {
+            id: conversationId,
+            title: conversationId === 'default' ? 'Main Conversation' : `Chat ${conversationId.slice(0, 8)}`,
+            lastMessage: msg.message,
+            lastMessageTime: msg.created_at,
+            messageCount: 1
+          });
+        } else {
+          const conv = conversationMap.get(conversationId);
+          // Only update if this message is more recent
+          if (new Date(msg.created_at) > new Date(conv.lastMessageTime)) {
+            conv.lastMessage = msg.message;
+            conv.lastMessageTime = msg.created_at;
+          }
+          conv.messageCount++;
+        }
+      });
+
+      return Array.from(conversationMap.values())
+        .sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime());
+    } catch (error) {
+      console.error('Error in getConversationsList:', error);
+      return [];
+    }
+  }
+
+  static async deleteConversation(conversationId: string): Promise<boolean> {
+    try {
+      const sessionId = this.getSessionId();
+      
+      const { error } = await supabase
+        .from('conversations')
+        .delete()
+        .eq('session_id', sessionId)
+        .eq('persona_id', conversationId);
+
+      if (error) {
+        console.error('Error deleting conversation:', error);
+        throw error;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error in deleteConversation:', error);
+      return false;
     }
   }
 
@@ -142,7 +247,7 @@ export class SupabaseService {
 
       if (error) {
         console.error('Error creating chess game:', error);
-        return null;
+        throw error;
       }
 
       return data;
@@ -166,7 +271,7 @@ export class SupabaseService {
 
       if (error) {
         console.error('Error updating chess game:', error);
-        return null;
+        throw error;
       }
 
       return data;
@@ -191,7 +296,7 @@ export class SupabaseService {
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching active chess game:', error);
-        return null;
+        throw error;
       }
 
       return data || null;
@@ -199,5 +304,45 @@ export class SupabaseService {
       console.error('Error in getActiveChessGame:', error);
       return null;
     }
+  }
+
+  // Real-time subscriptions
+  static subscribeToConversations(
+    callback: (payload: any) => void,
+    conversationId?: string
+  ) {
+    const sessionId = this.getSessionId();
+    
+    let channel = supabase
+      .channel('conversations')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversations',
+          filter: `session_id=eq.${sessionId}`
+        },
+        callback
+      );
+
+    if (conversationId) {
+      channel = channel.on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversations',
+          filter: `persona_id=eq.${conversationId}`
+        },
+        callback
+      );
+    }
+
+    channel.subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }
 }

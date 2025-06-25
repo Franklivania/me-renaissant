@@ -12,17 +12,37 @@ export default function ChatPage() {
   const [searchParams] = useSearchParams();
   const conversationId = searchParams.get('chat');
   
-  const { doppelganger } = useProfileStore();
-  const { messages, isLoading, isTyping, loadConversationHistory, addMessage, setTyping } = useChatStore();
+  const { doppelganger, isConnected: profileConnected } = useProfileStore();
+  const { 
+    messages, 
+    isLoading, 
+    isTyping, 
+    isConnected: chatConnected,
+    loadConversationHistory, 
+    addMessage, 
+    setTyping,
+    testConnection
+  } = useChatStore();
   
   const [inputMessage, setInputMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'testing'>('testing');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Load conversation history when component mounts or conversation changes
-    loadConversationHistory();
-  }, [conversationId, loadConversationHistory]);
+    // Test connections and load conversation history
+    const initializeChat = async () => {
+      setConnectionStatus('testing');
+      const connected = await testConnection();
+      setConnectionStatus(connected ? 'connected' : 'disconnected');
+      
+      if (connected) {
+        await loadConversationHistory(conversationId || undefined);
+      }
+    };
+
+    initializeChat();
+  }, [conversationId, loadConversationHistory, testConnection]);
 
   useEffect(() => {
     // Scroll to bottom when new messages arrive
@@ -70,6 +90,14 @@ export default function ChatPage() {
 
     } catch (error) {
       console.error('Error sending message:', error);
+      
+      // Add fallback response if AI fails
+      await addMessage({
+        session_id: '',
+        persona_id: conversationId || null,
+        sender: 'doppelganger',
+        message: "Forgive me, dear soul, but the winds of time seem to whisper thy words away from mine ears. Speak again, that I might hear thee clearly."
+      });
     } finally {
       setIsSending(false);
       setTyping(false);
@@ -93,13 +121,29 @@ export default function ChatPage() {
     <div className="flex flex-col h-full max-h-screen">
       {/* Chat Header */}
       <div className="flex-shrink-0 p-4 border-b border-brown-100/20">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-brown-100/20 flex items-center justify-center">
-            <Icon icon="mdi:account-circle" className="w-6 h-6 text-brown-100" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-brown-100/20 flex items-center justify-center">
+              <Icon icon="mdi:account-circle" className="w-6 h-6 text-brown-100" />
+            </div>
+            <div>
+              <h3 className="text-brown-100 font-im text-lg">{doppelganger.name}</h3>
+              <p className="text-brown-100/60 text-sm">{doppelganger.title}</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-brown-100 font-im text-lg">{doppelganger.name}</h3>
-            <p className="text-brown-100/60 text-sm">{doppelganger.title}</p>
+          
+          {/* Connection Status */}
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${
+              connectionStatus === 'connected' ? 'bg-green-400' :
+              connectionStatus === 'disconnected' ? 'bg-red-400' :
+              'bg-yellow-400'
+            }`} />
+            <span className="text-xs text-brown-100/60">
+              {connectionStatus === 'connected' ? 'Connected' :
+               connectionStatus === 'disconnected' ? 'Offline' :
+               'Connecting...'}
+            </span>
           </div>
         </div>
       </div>
@@ -123,6 +167,21 @@ export default function ChatPage() {
                 I am {doppelganger.name}, thy Renaissance mirror. What wisdom or wonder 
                 shall we explore together across the centuries?
               </p>
+            </motion.div>
+          )}
+
+          {isLoading && messages.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-8"
+            >
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="w-8 h-8 border-2 border-brown-100/20 border-t-brown-100 rounded-full mx-auto mb-4"
+              />
+              <p className="text-brown-100/60">Loading thy conversation...</p>
             </motion.div>
           )}
 
@@ -188,6 +247,14 @@ export default function ChatPage() {
 
       {/* Message Input */}
       <div className="flex-shrink-0 p-4 border-t border-brown-100/20">
+        {connectionStatus === 'disconnected' && (
+          <div className="mb-3 p-2 bg-red-400/20 border border-red-400/40 rounded-lg text-center">
+            <p className="text-red-300 text-sm">
+              Connection lost. Messages will be saved when connection is restored.
+            </p>
+          </div>
+        )}
+        
         <form onSubmit={handleSendMessage} className="flex gap-2">
           <div className="flex-1">
             <Input

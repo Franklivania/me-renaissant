@@ -2,22 +2,23 @@ import useSidebarStore from "@/store/useSidebarStore"
 import type { ReactNode } from "react"
 import { motion, AnimatePresence } from "motion/react"
 import { Icon } from "@iconify/react"
-import Image from "@/components/image"
 import { useState, useEffect } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { useChatStore } from "@/store/useChatStore"
 
-const NavItem = ({ children, label, expand, onClick, isActive = false }: {
+const NavItem = ({ children, label, expand, onClick, isActive = false, onDelete }: {
   children: ReactNode,
   label: string,
   expand: boolean,
   onClick?: () => void,
-  isActive?: boolean
+  isActive?: boolean,
+  onDelete?: () => void
 }) => {
   const [showTooltip, setShowTooltip] = useState(false)
+  const [showDeleteButton, setShowDeleteButton] = useState(false)
 
   return (
-    <div className="relative">
+    <div className="relative group">
       <motion.button
         type="button"
         onClick={onClick}
@@ -28,8 +29,14 @@ const NavItem = ({ children, label, expand, onClick, isActive = false }: {
         }`}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        onMouseEnter={() => !expand && setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
+        onMouseEnter={() => {
+          if (!expand) setShowTooltip(true);
+          if (onDelete) setShowDeleteButton(true);
+        }}
+        onMouseLeave={() => {
+          setShowTooltip(false);
+          setShowDeleteButton(false);
+        }}
       >
         <motion.span
           className="flex-shrink-0 text-lg"
@@ -46,12 +53,28 @@ const NavItem = ({ children, label, expand, onClick, isActive = false }: {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
               transition={{ duration: 0.2, delay: 0.1 }}
-              className="ml-3 text-sm font-medium whitespace-nowrap truncate"
+              className="ml-3 text-sm font-medium whitespace-nowrap truncate flex-1"
             >
               {label}
             </motion.span>
           )}
         </AnimatePresence>
+
+        {/* Delete button for conversations */}
+        {onDelete && expand && showDeleteButton && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="ml-2 p-1 rounded-md hover:bg-red-400/20 text-red-400 hover:text-red-300 transition-colors"
+          >
+            <Icon icon="mdi:delete-outline" className="w-4 h-4" />
+          </motion.button>
+        )}
       </motion.button>
 
       <AnimatePresence>
@@ -76,11 +99,13 @@ export default function DesktopSidebar() {
   const [searchParams] = useSearchParams();
   const currentChat = searchParams.get('chat');
   const { expand, toggleExpand } = useSidebarStore();
-  const { conversations, loadConversations } = useChatStore();
+  const { conversations, loadConversations, deleteConversation, isConnected } = useChatStore();
 
   useEffect(() => {
-    loadConversations();
-  }, [loadConversations]);
+    if (isConnected) {
+      loadConversations();
+    }
+  }, [loadConversations, isConnected]);
 
   const handleNewChat = () => {
     navigate("/chat");
@@ -91,6 +116,13 @@ export default function DesktopSidebar() {
       navigate("/chat");
     } else {
       navigate(`/chat?chat=${conversationId}`);
+    }
+  };
+
+  const handleDeleteConversation = async (conversationId: string) => {
+    const success = await deleteConversation(conversationId);
+    if (success && currentChat === conversationId) {
+      navigate("/chat");
     }
   };
 
@@ -121,6 +153,18 @@ export default function DesktopSidebar() {
           <Icon icon="ri:chess-fill" className="w-5 h-5" />
         </NavItem>
 
+        {/* Connection Status */}
+        {expand && (
+          <div className="px-3 py-2 mt-2">
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`} />
+              <span className="text-xs text-brown-100/60">
+                {isConnected ? 'Connected' : 'Offline'}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Conversations Section */}
         {expand && conversations.length > 0 && (
           <motion.div
@@ -141,6 +185,7 @@ export default function DesktopSidebar() {
                   expand={expand}
                   onClick={() => handleConversationClick(conversation.id)}
                   isActive={currentChat === conversation.id}
+                  onDelete={conversation.id !== 'default' ? () => handleDeleteConversation(conversation.id) : undefined}
                 >
                   <Icon icon="mdi:chat-outline" className="w-4 h-4" />
                 </NavItem>
