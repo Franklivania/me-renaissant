@@ -181,7 +181,7 @@ export default function ChatPage() {
                 Greetings, kindred soul!
               </h3>
               <p className="text-brown-100/70">
-                I am {doppelganger.name}, thy Renaissance mirror. What wisdom or wonder
+                I am {doppelganger.name}, thy Renaissance mirror. What wisdom or wonder 
                 shall we explore together across the centuries?
               </p>
             </motion.div>
@@ -266,7 +266,7 @@ export default function ChatPage() {
       </div>
 
       {/* Message Input */}
-      <div className="flex-shrink-0 p-4 border-t border-brown-100/20">
+      <div className={`flex-shrink-0 p-4 ${hasMessages ? 'border-t border-brown-100/20' : ''}`}>
         {connectionStatus === 'disconnected' && (
           <div className="mb-3 p-2 bg-red-400/20 border border-red-400/40 rounded-lg text-center">
             <p className="text-red-300 text-sm">
@@ -285,8 +285,28 @@ export default function ChatPage() {
               placeholder="Share thy thoughts with thy Renaissance mirror... (Shift+Enter for new line)"
               disabled={isSending}
               rows={1}
-              className="w-full px-4 py-3 text-lg bg-brown-100/5 border-b-2 border-brown-100/20 text-brown-100 placeholder-brown-100/40 focus:outline-none focus:border-gold placeholder:font-lato transition-colors duration-200 resize-none outline-0 min-h-[3rem] max-h-[7.5rem]"
+              className="w-full px-4 py-3 text-lg bg-brown-100/5 border-b-2 border-brown-100/20 text-brown-100 placeholder-brown-100/40 focus:outline-none focus:border-gold placeholder:font-lato transition-colors duration-200 resize-none outline-0 min-h-[3rem] max-h-[7.5rem] overflow-y-auto"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#D4AF37 #2A1F14'
+              }}
             />
+            <style jsx>{`
+              textarea::-webkit-scrollbar {
+                width: 6px;
+              }
+              textarea::-webkit-scrollbar-track {
+                background: #2A1F14;
+                border-radius: 3px;
+              }
+              textarea::-webkit-scrollbar-thumb {
+                background: #D4AF37;
+                border-radius: 3px;
+              }
+              textarea::-webkit-scrollbar-thumb:hover {
+                background: #B8941F;
+              }
+            `}</style>
           </div>
           <Button
             type="submit"

@@ -110,7 +110,7 @@ End of Chat Export`;
         whileTap={{ scale: 0.9 }}
         onClick={(e) => {
           e.stopPropagation();
-          setShowActions(true);
+          setShowActions(!showActions);
         }}
         className="p-1 rounded-md hover:bg-brown-100/10 text-brown-100/60 hover:text-brown-100 transition-colors"
       >
@@ -121,16 +121,14 @@ End of Chat Export`;
       <AnimatePresence>
         {showActions && (
           <>
-            {/* Backdrop for mobile */}
-            {isMobile && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/20 z-40"
-                onClick={() => setShowActions(false)}
-              />
-            )}
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-30"
+              onClick={() => setShowActions(false)}
+            />
 
             {/* Actions Menu */}
             <motion.div
@@ -139,10 +137,8 @@ End of Chat Export`;
               exit={{ opacity: 0, scale: 0.95, y: -10 }}
               transition={{ duration: 0.15 }}
               className={clsx(
-                'absolute bg-brown-800 border border-brown-100/20 rounded-lg shadow-xl z-50 min-w-48',
-                isMobile
-                  ? 'right-0 top-8'
-                  : 'right-0 top-8'
+                'absolute bg-brown-800 border border-brown-100/20 rounded-lg shadow-xl z-40 min-w-48',
+                'right-0 top-8'
               )}
             >
               <div className="p-2 space-y-1">

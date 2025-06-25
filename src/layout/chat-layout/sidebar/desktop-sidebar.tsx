@@ -39,10 +39,10 @@ const NavItem = ({ children, label, expand, onClick, isActive = false, conversat
         <button
           type="button"
           onClick={onClick}
-          className="flex flex-1"
+          className="flex flex-1 items-center min-w-0"
         >
           <motion.span
-            className="flex-shrink-0 items-center text-lg"
+            className="flex-shrink-0 text-lg"
             animate={{ rotate: expand ? 0 : 0 }}
             transition={{ duration: 0.2 }}
           >
@@ -64,17 +64,19 @@ const NavItem = ({ children, label, expand, onClick, isActive = false, conversat
           </AnimatePresence>
         </button>
 
-        {/* Actions button for conversations */}
+        {/* Actions button for conversations - positioned outside the main button */}
         {showActions && expand && conversationId && (
-          <div className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <ChatActions
-              conversationId={conversationId}
-              conversationTitle={label}
-              onActionComplete={() => {
-                // Refresh conversations after action
-                window.location.reload();
-              }}
-            />
+          <div className="ml-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div onClick={(e) => e.stopPropagation()}>
+              <ChatActions
+                conversationId={conversationId}
+                conversationTitle={label}
+                onActionComplete={() => {
+                  // Refresh conversations after action
+                  window.location.reload();
+                }}
+              />
+            </div>
           </div>
         )}
       </motion.div>
@@ -163,14 +165,33 @@ export default function DesktopSidebar() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="mt-4"
+            className="mt-4 flex-1 min-h-0"
           >
             <div className="px-3 py-2">
               <h3 className="text-xs font-semibold text-brown-100/60 uppercase tracking-normal">
                 Recent Conversations
               </h3>
             </div>
-            <div className="space-y-1 max-h-64 overflow-x-hidden overflow-y-auto">
+            <div className="space-y-1 overflow-x-hidden overflow-y-auto flex-1 pr-1" style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#D4AF37 #2A1F14'
+            }}>
+              <style jsx>{`
+                div::-webkit-scrollbar {
+                  width: 6px;
+                }
+                div::-webkit-scrollbar-track {
+                  background: #2A1F14;
+                  border-radius: 3px;
+                }
+                div::-webkit-scrollbar-thumb {
+                  background: #D4AF37;
+                  border-radius: 3px;
+                }
+                div::-webkit-scrollbar-thumb:hover {
+                  background: #B8941F;
+                }
+              `}</style>
               {conversations.slice(0, 10).map((conversation) => (
                 <NavItem
                   key={conversation.id}

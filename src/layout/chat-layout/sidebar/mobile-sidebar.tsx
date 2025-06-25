@@ -48,7 +48,7 @@ const MobileNavItem = ({
       >
         <button
           onClick={onClick}
-          className="flex items-center flex-1"
+          className="flex items-center flex-1 min-w-0"
         >
           <motion.span 
             className="flex-shrink-0 text-xl mr-4"
@@ -69,17 +69,19 @@ const MobileNavItem = ({
           </motion.div>
         </button>
 
-        {/* Actions for conversations */}
+        {/* Actions for conversations - positioned outside the main button */}
         {showActions && conversationId && (
-          <div className="ml-2">
-            <ChatActions
-              conversationId={conversationId}
-              conversationTitle={label}
-              onActionComplete={() => {
-                // Refresh conversations after action
-                window.location.reload();
-              }}
-            />
+          <div className="ml-2 flex-shrink-0">
+            <div onClick={(e) => e.stopPropagation()}>
+              <ChatActions
+                conversationId={conversationId}
+                conversationTitle={label}
+                onActionComplete={() => {
+                  // Refresh conversations after action
+                  window.location.reload();
+                }}
+              />
+            </div>
           </div>
         )}
       </motion.div>
@@ -181,7 +183,26 @@ export default function MobileSidebar() {
               </motion.button>
             </motion.div>
 
-            <div className="flex-1 p-6 space-y-2">
+            <div className="flex-1 p-6 space-y-2 overflow-y-auto" style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#D4AF37 #2A1F14'
+            }}>
+              <style jsx>{`
+                div::-webkit-scrollbar {
+                  width: 6px;
+                }
+                div::-webkit-scrollbar-track {
+                  background: #2A1F14;
+                  border-radius: 3px;
+                }
+                div::-webkit-scrollbar-thumb {
+                  background: #D4AF37;
+                  border-radius: 3px;
+                }
+                div::-webkit-scrollbar-thumb:hover {
+                  background: #B8941F;
+                }
+              `}</style>
               <MobileNavItem 
                 label="New Chat" 
                 delay={0.15}

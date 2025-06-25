@@ -27,7 +27,7 @@ interface ChatState {
   setTyping: (typing: boolean) => void;
   setCurrentConversation: (id: string | null) => void;
   clearMessages: () => void;
-  deleteConversation: (conversationId: string) => Promise<void>;
+  deleteConversation: (conversationId: string) => Promise<boolean>;
   testConnection: () => Promise<boolean>;
 }
 
@@ -149,7 +149,7 @@ export const useChatStore = create<ChatState>()(
         set({ messages: [], currentConversationId: null });
       },
 
-      deleteConversation: async (conversationId) => {
+      deleteConversation: async (conversationId): Promise<boolean> => {
         try {
           const success = await SupabaseService.deleteConversation(conversationId);
           
