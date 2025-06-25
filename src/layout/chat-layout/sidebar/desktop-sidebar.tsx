@@ -165,7 +165,7 @@ export default function DesktopSidebar() {
                 Recent Conversations
               </h3>
             </div>
-            <div className="space-y-1 max-h-64 overflow-y-auto">
+            <div className="space-y-1 max-h-64 overflow-x-hidden">
               {conversations.slice(0, 10).map((conversation) => (
                 <NavItem
                   key={conversation.id}

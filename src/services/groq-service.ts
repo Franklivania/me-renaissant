@@ -77,11 +77,10 @@ export class GroqService {
           console.error('Invalid API key');
         } else if (error.response?.status === 429) {
           console.error('Rate limit exceeded');
-        } else if (error.response?.status >= 500) {
+        } else if (error.response && error.response.status !== undefined && error.response.status >= 500) {
           console.error('Groq server error');
         }
       }
-      
       return this.getFallbackResponse(doppelganger);
     }
   }
