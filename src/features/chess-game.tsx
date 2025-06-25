@@ -29,16 +29,24 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
-        <Button variant="ghost" onClick={onBack} className="text-brown-100 hover:text-gold">
+        <Button
+          variant="ghost"
+          onClick={onBack}
+          className="text-brown-100 hover:text-gold flex items-center"
+        >
           <Icon icon="lucide:arrow-left" className="w-4 h-4 mr-2" />
-          Back to Games
+          <span className="hidden sm:inline">Back to Games</span>
         </Button>
-        <h1 className="text-2xl font-im font-bold text-brown-100">
-          Royal Chess
-        </h1>
-        <Button variant="ghost" onClick={resetGame} className="text-brown-100 hover:text-gold">
+        <h3 className="lg:font-2xl font-im font-bold text-brown-100 sm:block">
+          Chess of Time
+        </h3>
+        <Button
+          variant="ghost"
+          onClick={initializeGame}
+          className="text-brown-100 hover:text-gold flex items-center"
+        >
           <Icon icon="lucide:rotate-ccw" className="w-4 h-4" />
-          Reset
+          <span className="hidden sm:inline ml-2">Reset</span>
         </Button>
       </div>
 
