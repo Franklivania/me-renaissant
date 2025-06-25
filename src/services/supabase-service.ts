@@ -61,9 +61,9 @@ export class SupabaseService {
         .from('profiles')
         .select('*')
         .eq('session_id', sessionId)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+      if (error) {
         console.error('Error fetching profile:', error);
         throw error;
       }
@@ -292,9 +292,9 @@ export class SupabaseService {
         .eq('game_status', 'active')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error fetching active chess game:', error);
         throw error;
       }
