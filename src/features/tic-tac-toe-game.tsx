@@ -68,7 +68,7 @@ export const TicTacToeGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
         <Button variant="ghost" onClick={onBack} className="text-brown-100 hover:text-gold flex items-center">
           <Icon icon="lucide:arrow-left" className="w-4 h-4 mr-2" />

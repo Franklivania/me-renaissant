@@ -134,7 +134,7 @@ export default function ChatPage() {
   const hasMessages = messages.length > 0;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="w-full max-w-2xl mx-auto flex flex-col h-full">
       <div className="flex-shrink-0 p-4 border-b border-brown-100/20">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-brown-100/20 flex items-center justify-center">

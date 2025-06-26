@@ -1,15 +1,30 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Me RenAIssant</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Me RenAIssant</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <a href="https://bolt.new/" target="_blank">
+    <img src="/bolt-logo.png" alt="Bolt-logo" width="48" height="48" id="bolt">
+  </a>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+<style>
+  #bolt {
+    position: absolute;
+    bottom: 5%;
+    right: 3%;
+    z-index: 9999;
+  }
+</style>
+
 </html>

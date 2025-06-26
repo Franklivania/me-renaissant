@@ -10,7 +10,7 @@ export default function ChatLayout({ children }: Readonly<{ children: ReactNode 
         <Topnav />
         <section
           role="presentation"
-          className="w-full max-w-2xl h-full overflow-x-hidden mx-auto"
+          className="w-full h-full overflow-x-hidden mx-auto"
         >
           {children}
         </section>

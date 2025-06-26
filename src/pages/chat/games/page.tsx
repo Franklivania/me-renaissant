@@ -34,7 +34,7 @@ export default function GamesPage() {
 
   // Default games selection view
   return (
-    <div className="m-auto space-y-10">
+    <div className="w-full max-w-3xl m-auto space-y-10">
       <motion.h2 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

@@ -61,15 +61,17 @@ export const ChessAnalysisBoard: React.FC<ChessAnalysisBoardProps> = ({
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      className="bg-brown-100/5 backdrop-blur-sm rounded-lg p-6 border border-brown-100/20 h-fit"
+      className="bg-black/30 backdrop-blur-sm rounded-lg p-6 h-fit max-h-[45em] overflow-x-hidden"
     >
-      <h4 className="text-xl font-im text-brown-100 mb-6 flex items-center gap-2">
-        <Icon icon="lucide:bar-chart-3" className="w-5 h-5" />
-        Game Analysis
-      </h4>
+      <div className='w-full px-3 py-2 bg-brown-100/5 border-b border-brown-100'>
+        <h4 className="text-xl font-im text-brown-100 flex items-center gap-2">
+          <Icon icon="lucide:bar-chart-3" className="w-5 h-5" />
+          Play Board
+        </h4>
+      </div>
 
       {/* Game Info */}
-      <div className="space-y-4 mb-6">
+      <div className="space-y-4 mb-6 ">
         <div className="p-3 bg-brown-100/5 rounded-lg">
           <h5 className="text-brown-100 font-medium mb-2">Game Type</h5>
           <div className="text-sm text-brown-100/70 space-y-1">
@@ -89,7 +91,7 @@ export const ChessAnalysisBoard: React.FC<ChessAnalysisBoardProps> = ({
       {/* Captured Pieces */}
       <div className="space-y-4 mb-6">
         <h5 className="text-brown-100 font-medium">Captured Pieces</h5>
-        
+
         {/* White Captured */}
         <div className="p-3 bg-brown-100/5 rounded-lg">
           <div className="flex items-center justify-between mb-2">
@@ -134,7 +136,7 @@ export const ChessAnalysisBoard: React.FC<ChessAnalysisBoardProps> = ({
             <div className="text-center">
               <p className="text-sm text-brown-100/70 mb-1">Material Advantage</p>
               <p className="text-gold font-bold">
-                {whiteValue > blackValue 
+                {whiteValue > blackValue
                   ? `White +${whiteValue - blackValue}`
                   : `Black +${blackValue - whiteValue}`
                 }
@@ -183,23 +185,23 @@ export const ChessAnalysisBoard: React.FC<ChessAnalysisBoardProps> = ({
       )}
 
       {/* Live Analysis for Easy/Medium */}
-      {(gameSettings.difficulty === 'easy' || gameSettings.difficulty === 'medium') && 
-       gameStatus === 'playing' && moves.length > 0 && (
-        <div className="space-y-4">
-          <h5 className="text-brown-100 font-medium flex items-center gap-2">
-            <Icon icon="lucide:lightbulb" className="w-4 h-4" />
-            Live Tips
-          </h5>
-          <div className="p-3 bg-mint/10 rounded-lg border border-mint/20">
-            <p className="text-sm text-brown-100/80">
-              {gameSettings.difficulty === 'easy' 
-                ? "Green squares show where you can move. Look for captures and checks!"
-                : "Analyze each move carefully. Consider piece safety and board control."
-              }
-            </p>
+      {(gameSettings.difficulty === 'easy' || gameSettings.difficulty === 'medium') &&
+        gameStatus === 'playing' && moves.length > 0 && (
+          <div className="space-y-4">
+            <h5 className="text-brown-100 font-medium flex items-center gap-2">
+              <Icon icon="lucide:lightbulb" className="w-4 h-4" />
+              Live Tips
+            </h5>
+            <div className="p-3 bg-mint/10 rounded-lg border border-mint/20">
+              <p className="text-sm text-brown-100/80">
+                {gameSettings.difficulty === 'easy'
+                  ? "Green squares show where you can move. Look for captures and checks!"
+                  : "Analyze each move carefully. Consider piece safety and board control."
+                }
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </motion.div>
   );
 };

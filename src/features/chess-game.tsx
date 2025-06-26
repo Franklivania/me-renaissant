@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Button } from '@/components';
 import { Icon } from '@iconify/react';
 import { Chessboard } from 'react-chessboard';
-import { Chess } from 'chess.js';
+import { Chess, type Square } from 'chess.js';
 import { ChessGameSetup } from './chess-setup';
 import { ChessAnalysisBoard } from './chess-analysis-board';
 import { ChessEngine } from '@/services/chess-engine.ts';
@@ -200,13 +200,13 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     // If no square is selected, select this square
     if (!selectedSquare) {
-      const piece = game.get(square);
+      const piece = game.get(square as Square);
       if (piece && piece.color === (gameSettings.playerColor === 'white' ? 'w' : 'b')) {
         setSelectedSquare(square);
         
         // Show possible moves for easy/medium modes
         if (gameSettings.difficulty === 'easy' || gameSettings.difficulty === 'medium') {
-          const moves = game.moves({ square, verbose: true });
+          const moves = game.moves({ square: square as Square, verbose: true });
           setPossibleMoves(moves.map(move => move.to));
         }
       }
@@ -237,12 +237,12 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       setTimeout(() => setErrorMessage(null), 2000);
       
       // Check if clicking on another piece of same color
-      const piece = game.get(square);
+      const piece = game.get(square as Square);
       if (piece && piece.color === (gameSettings.playerColor === 'white' ? 'w' : 'b')) {
         setSelectedSquare(square);
         
         if (gameSettings.difficulty === 'easy' || gameSettings.difficulty === 'medium') {
-          const moves = game.moves({ square, verbose: true });
+          const moves = game.moves({ square: square as Square, verbose: true });
           setPossibleMoves(moves.map(move => move.to));
         }
       } else {
