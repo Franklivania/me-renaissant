@@ -41,7 +41,7 @@ export class ChessEngine {
             return;
           }
 
-          let bestMove;
+          let bestMove: Move;
           switch (difficulty) {
             case 'easy':
               bestMove = this.getEasyMove(game, moves);
@@ -57,10 +57,11 @@ export class ChessEngine {
           }
           
           resolve(bestMove);
-        } catch {
+        } catch (error) {
+          console.error('Error in getBestMove:', error);
           resolve(null);
         }
-      }, difficulty === 'hard' ? 50 : 10); // Shorter delay for easier modes
+      }, difficulty === 'hard' ? 100 : 50); // Shorter delay for easier modes
     });
   }
 
@@ -311,7 +312,7 @@ export class ChessEngine {
       setTimeout(() => {
         try {
           const game = new Chess(fen);
-          const analyses = [];
+          const analyses: string[] = [];
 
           if (move.captured) {
             const capturedValue = this.PIECE_VALUES[move.captured];
@@ -342,7 +343,8 @@ export class ChessEngine {
           }
 
           resolve(analyses.length > 0 ? analyses.join(", ") : "Solid move");
-        } catch {
+        } catch (error) {
+          console.error('Error analyzing move:', error);
           resolve("Move played");
         }
       }, 10);
@@ -393,7 +395,8 @@ export class ChessEngine {
           analysis += "Both players demonstrated good understanding of chess principles.";
 
           resolve(analysis);
-        } catch {
+        } catch (error) {
+          console.error('Error analyzing game:', error);
           resolve("Game analysis completed.");
         }
       }, 100);

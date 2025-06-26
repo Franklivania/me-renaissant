@@ -28,28 +28,48 @@ interface GameMove {
   analysis?: string;
 }
 
+type GameStatus = 'playing' | 'checkmate' | 'stalemate' | 'draw' | 'timeout';
+type PlayerColor = 'white' | 'black';
+
 export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const { doppelganger } = useProfileStore();
-  const [gameStarted, setGameStarted] = useState(false);
+  
+  // Game state
+  const [gameStarted, setGameStarted] = useState<boolean>(false);
   const [gameSettings, setGameSettings] = useState<GameSettings | null>(null);
   const [game, setGame] = useState<Chess>(new Chess());
-  const [gameStatus, setGameStatus] = useState<'playing' | 'checkmate' | 'stalemate' | 'draw' | 'timeout'>('playing');
+  const [gameStatus, setGameStatus] = useState<GameStatus>('playing');
   const [moves, setMoves] = useState<GameMove[]>([]);
   const [capturedPieces, setCapturedPieces] = useState<{ white: string[], black: string[] }>({ white: [], black: [] });
+  
+  // UI state
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<string[]>([]);
+  const [lastMoveSquares, setLastMoveSquares] = useState<{ from: string; to: string } | null>(null);
+  
+  // Timer state
   const [whiteTime, setWhiteTime] = useState<number | null>(null);
   const [blackTime, setBlackTime] = useState<number | null>(null);
-  const [currentTurn, setCurrentTurn] = useState<'white' | 'black'>('white');
-  const [isThinking, setIsThinking] = useState(false);
+  const [currentTurn, setCurrentTurn] = useState<PlayerColor>('white');
+  
+  // AI and game state
+  const [isAIThinking, setIsAIThinking] = useState<boolean>(false);
+  const [aiThinkingStartTime, setAiThinkingStartTime] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [gameAnalysis, setGameAnalysis] = useState<string>('');
   const [winner, setWinner] = useState<string | null>(null);
-  const [aiThinkingStartTime, setAiThinkingStartTime] = useState<number | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [commentary, setCommentary] = useState<string | null>(null);
-  const [lastMoveSquares, setLastMoveSquares] = useState<{ from: string; to: string } | null>(null);
-  const [animatingMove, setAnimatingMove] = useState(false);
+  const [animatingMove, setAnimatingMove] = useState<boolean>(false);
+
+  // Derived state
+  const isPlayerTurn = useMemo(() => {
+    return gameSettings ? currentTurn === gameSettings.playerColor : false;
+  }, [currentTurn, gameSettings]);
+
+  const aiColor = useMemo(() => {
+    return gameSettings ? (gameSettings.playerColor === 'white' ? 'black' : 'white') : 'black';
+  }, [gameSettings]);
 
   // Check for existing session on component mount
   useEffect(() => {
@@ -110,15 +130,15 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
   }, [gameStarted, gameSettings, game, moves, capturedPieces, whiteTime, blackTime, gameStatus, currentTurn, winner, sessionId]);
 
-  // Timer effect with AI thinking time consideration
+  // Timer effect
   useEffect(() => {
     if (!gameStarted || !gameSettings?.timeLimit || gameStatus !== 'playing') return;
 
     const interval = setInterval(() => {
       if (currentTurn === 'white' && whiteTime !== null && whiteTime > 0) {
-        setWhiteTime(prev => Math.max(0, prev! - 1));
+        setWhiteTime(prev => prev ? Math.max(0, prev - 1) : 0);
       } else if (currentTurn === 'black' && blackTime !== null && blackTime > 0) {
-        setBlackTime(prev => Math.max(0, prev! - 1));
+        setBlackTime(prev => prev ? Math.max(0, prev - 1) : 0);
       }
     }, 1000);
 
@@ -224,7 +244,6 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     // Adjust timer for AI thinking time (only for AI moves)
     if (isAIMove && gameSettings?.timeLimit && thinkingTime > 0) {
-      const aiColor = gameSettings.playerColor === 'white' ? 'black' : 'white';
       const timeUsed = Math.ceil(thinkingTime / 1000);
       
       if (aiColor === 'white') {
@@ -250,12 +269,12 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     setSelectedSquare(null);
     setPossibleMoves([]);
     setErrorMessage(null);
-  }, [game, gameSettings, moves, aiThinkingStartTime, doppelganger]);
+  }, [game, gameSettings, moves, aiThinkingStartTime, doppelganger, aiColor]);
 
   const makeAIMove = useCallback(async () => {
-    if (!gameSettings || isThinking) return;
+    if (!gameSettings || isAIThinking || gameStatus !== 'playing') return;
     
-    setIsThinking(true);
+    setIsAIThinking(true);
     setAiThinkingStartTime(Date.now());
     
     // Show thinking commentary
@@ -276,9 +295,9 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
         // Use setTimeout to prevent blocking for hard mode
         if (gameSettings.difficulty === 'hard') {
-          setTimeout(callback, 200); // Slightly longer delay for hard mode
+          setTimeout(callback, 500); // Longer delay for hard mode
         } else {
-          setTimeout(callback, 100);
+          setTimeout(callback, 200);
         }
       });
       
@@ -297,17 +316,17 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     } catch {
       // Error handled in promise
     } finally {
-      setIsThinking(false);
+      setIsAIThinking(false);
       setAiThinkingStartTime(null);
     }
-  }, [game, gameSettings, isThinking, processMoveResult]);
+  }, [game, gameSettings, isAIThinking, processMoveResult, gameStatus]);
 
-  // AI move effect with performance optimization
+  // AI move effect - only trigger when it's AI's turn
   useEffect(() => {
-    if (gameStarted && currentTurn !== gameSettings?.playerColor && gameStatus === 'playing' && !isThinking) {
+    if (gameStarted && !isPlayerTurn && gameStatus === 'playing' && !isAIThinking) {
       makeAIMove();
     }
-  }, [currentTurn, gameStarted, gameSettings, gameStatus, isThinking, makeAIMove]);
+  }, [gameStarted, isPlayerTurn, gameStatus, isAIThinking, makeAIMove]);
 
   const startGame = useCallback((settings: GameSettings) => {
     setGameSettings(settings);
@@ -331,7 +350,7 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     setErrorMessage(null);
     setGameAnalysis('');
     setWinner(null);
-    setIsThinking(false);
+    setIsAIThinking(false);
     setAiThinkingStartTime(null);
     setSessionId(null);
     setCommentary(`Greetings, noble ${settings.playerColor} player! The board is set, the pieces await thy command. May this game be worthy of the masters of old!`);
@@ -357,7 +376,7 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     setErrorMessage(null);
     setGameAnalysis('');
     setWinner(null);
-    setIsThinking(false);
+    setIsAIThinking(false);
     setAiThinkingStartTime(null);
     setSessionId(null);
     setCommentary(null);
@@ -369,7 +388,7 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   }, []);
 
   const onSquareClick = useCallback((square: string) => {
-    if (currentTurn !== gameSettings?.playerColor || gameStatus !== 'playing' || isThinking || animatingMove) return;
+    if (!isPlayerTurn || gameStatus !== 'playing' || isAIThinking || animatingMove) return;
 
     // Clear error message
     setErrorMessage(null);
@@ -377,11 +396,11 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     // If no square is selected, select this square
     if (!selectedSquare) {
       const piece = game.get(square as Square);
-      if (piece && piece.color === (gameSettings.playerColor === 'white' ? 'w' : 'b')) {
+      if (piece && piece.color === (gameSettings!.playerColor === 'white' ? 'w' : 'b')) {
         setSelectedSquare(square);
         
         // Show possible moves for easy/medium modes only
-        if (gameSettings.difficulty === 'easy' || gameSettings.difficulty === 'medium') {
+        if (gameSettings!.difficulty === 'easy' || gameSettings!.difficulty === 'medium') {
           const moves = game.moves({ square: square as Square, verbose: true });
           setPossibleMoves(moves.map(move => move.to));
         }
@@ -414,11 +433,11 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       
       // Check if clicking on another piece of same color
       const piece = game.get(square as Square);
-      if (piece && piece.color === (gameSettings.playerColor === 'white' ? 'w' : 'b')) {
+      if (piece && piece.color === (gameSettings!.playerColor === 'white' ? 'w' : 'b')) {
         setSelectedSquare(square);
         
         // Only show moves for easy/medium modes
-        if (gameSettings.difficulty === 'easy' || gameSettings.difficulty === 'medium') {
+        if (gameSettings!.difficulty === 'easy' || gameSettings!.difficulty === 'medium') {
           const moves = game.moves({ square: square as Square, verbose: true });
           setPossibleMoves(moves.map(move => move.to));
         }
@@ -427,10 +446,10 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         setPossibleMoves([]);
       }
     }
-  }, [currentTurn, gameSettings, gameStatus, isThinking, animatingMove, selectedSquare, game, processMoveResult]);
+  }, [isPlayerTurn, gameStatus, isAIThinking, animatingMove, selectedSquare, game, gameSettings, processMoveResult]);
 
-  const onPieceDrop = useCallback((sourceSquare: string, targetSquare: string) => {
-    if (currentTurn !== gameSettings?.playerColor || gameStatus !== 'playing' || isThinking || animatingMove) return false;
+  const onPieceDrop = useCallback((sourceSquare: string, targetSquare: string): boolean => {
+    if (!isPlayerTurn || gameStatus !== 'playing' || isAIThinking || animatingMove) return false;
 
     try {
       const moveResult = game.move({
@@ -449,9 +468,9 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
 
     return false;
-  }, [currentTurn, gameSettings, gameStatus, isThinking, animatingMove, game, processMoveResult]);
+  }, [isPlayerTurn, gameStatus, isAIThinking, animatingMove, game, processMoveResult]);
 
-  const formatTime = useCallback((seconds: number | null) => {
+  const formatTime = useCallback((seconds: number | null): string => {
     if (seconds === null) return '∞';
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -538,7 +557,7 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               <div className="flex justify-between items-center mb-4">
                 <div className="text-brown-100/80">
                   <p className="text-sm">
-                    Black {isThinking && currentTurn === 'black' ? '(Thinking...)' : ''}
+                    Black {isAIThinking && currentTurn === 'black' ? '(Thinking...)' : ''}
                   </p>
                   <motion.p 
                     className="text-lg font-bold text-gold"
@@ -556,7 +575,7 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     Turn: <span className="text-gold font-semibold capitalize">{currentTurn}</span>
                   </p>
                   <p className="text-sm text-brown-100/60">
-                    {gameSettings?.difficulty} • {gameSettings?.timeLimit ? `${gameSettings.timeLimit / 60}min` : 'Casual'}
+                    You: {gameSettings?.playerColor} • {gameSettings?.difficulty} • {gameSettings?.timeLimit ? `${gameSettings.timeLimit / 60}min` : 'Casual'}
                   </p>
                   {gameSettings?.difficulty === 'hard' && (
                     <p className="text-xs text-brown-100/40 mt-1">
@@ -566,7 +585,7 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 </div>
                 <div className="text-brown-100/80 text-right">
                   <p className="text-sm">
-                    White {isThinking && currentTurn === 'white' ? '(Thinking...)' : ''}
+                    White {isAIThinking && currentTurn === 'white' ? '(Thinking...)' : ''}
                   </p>
                   <motion.p 
                     className="text-lg font-bold text-gold"
@@ -626,7 +645,7 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 </motion.div>
               )}
 
-              {isThinking && (
+              {isAIThinking && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -638,7 +657,7 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                       className="w-4 h-4 border-2 border-brown-100/20 border-t-brown-100 rounded-full"
                     />
-                    <p className="text-brown-100/80 text-sm">AI is contemplating...</p>
+                    <p className="text-brown-100/80 text-sm">Thy doppelganger contemplates...</p>
                   </div>
                 </motion.div>
               )}
@@ -667,7 +686,7 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   customLightSquareStyle={{ backgroundColor: '#F5F0E1' }}
                   customDropSquareStyle={{ backgroundColor: '#D4AF37', opacity: 0.6 }}
                   areArrowsAllowed={false}
-                  arePiecesDraggable={!isThinking && !animatingMove}
+                  arePiecesDraggable={isPlayerTurn && !isAIThinking && !animatingMove}
                   animationDuration={200}
                 />
               </motion.div>
@@ -689,7 +708,7 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             capturedPieces={capturedPieces}
             gameStatus={gameStatus}
             gameAnalysis={gameAnalysis}
-            isThinking={isThinking}
+            isThinking={isAIThinking}
           />
         </div>
       </div>

@@ -73,3 +73,22 @@ export interface ChessMove {
   timestamp: number;
   analysis?: string;
 }
+
+// Chess-specific types for strict typing
+export type ChessColor = 'white' | 'black';
+export type ChessPiece = 'p' | 'n' | 'b' | 'r' | 'q' | 'k';
+export type GameStatus = 'playing' | 'checkmate' | 'stalemate' | 'draw' | 'timeout';
+export type Difficulty = 'easy' | 'medium' | 'hard';
+
+export interface GameSettings {
+  timeLimit: number | null;
+  difficulty: Difficulty;
+  playerColor: ChessColor;
+}
+
+export interface MoveAnalysis {
+  quality: 'excellent' | 'good' | 'questionable' | 'poor';
+  comment: string;
+  tactical?: boolean;
+  positional?: boolean;
+}
