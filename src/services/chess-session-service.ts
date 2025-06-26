@@ -38,7 +38,10 @@ export class ChessSessionService {
           current_fen: session.currentFen,
           moves: session.moves,
           captured_pieces: session.capturedPieces,
-          game_status: session.gameStatus,
+          game_status: 
+            session.gameStatus === "playing" ? "active" :
+            session.gameStatus === "timeout" ? "draw" :
+            session.gameStatus,
           winner: session.winner,
           white_time_remaining: session.whiteTime,
           black_time_remaining: session.blackTime
