@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components";
+import { Button } from "@/components/button";
 import { RadioOption } from "@/components/form/radio-option";
 import { useProfileStore } from "@/store/useProfileStore";
 

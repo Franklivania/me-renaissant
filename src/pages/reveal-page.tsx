@@ -1,4 +1,4 @@
-import { Button } from "@/components";
+import { Button } from "@/components/button";
 import useDeviceSize from "@/hooks/useDeviceSize";
 import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";

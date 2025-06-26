@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Icon } from '@iconify/react';
 import { Modal } from '@/components/modal';
-import { Button } from '@/components';
+import { Button } from '@/components/button';
 import { useChatStore } from '@/store/useChatStore';
 import { useNavigate } from 'react-router-dom';
 import type { ConversationMessage } from '@/types';

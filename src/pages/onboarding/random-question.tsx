@@ -1,4 +1,4 @@
-import { Button } from "@/components";
+import { Button } from "@/components/button";
 import { Input } from "@/components/form/input";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useState, useEffect } from "react";

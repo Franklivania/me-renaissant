@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Button } from '@/components';
+import { Button } from '@/components/button';
 import { Icon } from '@iconify/react';
 import { useProfileStore } from '@/store/useProfileStore';
 import { useChatStore } from '@/store/useChatStore';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Button } from '@/components';
+import { Button } from '@/components/button';
 import { Icon } from '@iconify/react';
 import { Chessboard } from 'react-chessboard';
 import { Chess, type Square, type Move } from 'chess.js';

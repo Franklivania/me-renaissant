@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Button } from '@/components';
+import { Button } from '@/components/button';
 import { Icon } from '@iconify/react';
 
 const GLYPHS = ['⚡', '🌙', '⭐', '🔥', '🌊', '🌿', '💎', '🗝️'];

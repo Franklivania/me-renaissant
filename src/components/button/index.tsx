@@ -2,7 +2,7 @@ import React from 'react';
 import { clsx } from 'clsx';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Icon } from "@iconify/react";
-import { motion } from "motion/react";
+import { motion, type HTMLMotionProps } from "motion/react";
 
 const Spinner: React.FC<{ size?: number }> = ({ size = 20 }) => (
   <svg
@@ -86,7 +86,7 @@ const buttonVariants = cva(
 );
 
 interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends HTMLMotionProps<"button">,
     VariantProps<typeof buttonVariants> {
   children: React.ReactNode;
   showQuill?: boolean;
