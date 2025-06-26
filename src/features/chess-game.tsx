@@ -6,7 +6,7 @@ import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { ChessGameSetup } from './chess-setup';
 import { ChessAnalysisBoard } from './chess-analysis-board';
-import { ChessEngine } from '@/services/chess-engine';
+import { ChessEngine } from '@/services/chess-engine.ts';
 
 interface GameSettings {
   timeLimit: number | null; // in seconds, null for casual
