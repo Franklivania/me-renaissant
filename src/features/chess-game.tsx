@@ -183,7 +183,7 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       isPlayerMove: !isAIMove
     };
 
-    const newCommentary = RenaissanceCommentary.generateComment(commentaryContext, doppelganger);
+    const newCommentary = RenaissanceCommentary.generateComment(commentaryContext, doppelganger || undefined);
     if (newCommentary) {
       setCommentary(newCommentary);
     }

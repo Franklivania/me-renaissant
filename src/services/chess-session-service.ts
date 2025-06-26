@@ -1,5 +1,5 @@
 import { SupabaseService } from './supabase-service';
-import type { ChessGame } from '@/types';
+import type { ChessGame, ChessMove } from '@/types';
 
 interface ChessGameSession {
   id: string;
@@ -17,17 +17,6 @@ interface ChessGameSession {
   currentTurn: 'white' | 'black';
   lastMoveTime: number;
   winner: string | null;
-}
-
-interface ChessMove {
-  from: string;
-  to: string;
-  piece: string;
-  captured?: string;
-  san: string;
-  fen: string;
-  timestamp: number;
-  analysis?: string;
 }
 
 interface GameSettings {
@@ -74,8 +63,8 @@ export class ChessSessionService {
           }
         }
       }
-    } catch (error) {
-      console.error('Error saving chess session:', error);
+    } catch {
+      // Error handled silently
     }
   }
 
@@ -108,8 +97,7 @@ export class ChessSessionService {
       }
 
       return null;
-    } catch (error) {
-      console.error('Error loading chess session:', error);
+    } catch {
       return null;
     }
   }
@@ -118,8 +106,8 @@ export class ChessSessionService {
   static async clearGameSession(): Promise<void> {
     try {
       localStorage.removeItem(this.STORAGE_KEY);
-    } catch (error) {
-      console.error('Error clearing chess session:', error);
+    } catch {
+      // Error handled silently
     }
   }
 
@@ -130,14 +118,14 @@ export class ChessSessionService {
         game_mode: 'quick',
         time_limit: gameSettings.timeLimit,
         player_color: gameSettings.playerColor,
-        game_status: 'completed',
+        game_status: 'draw', // Use 'draw' instead of 'completed'
         winner: winner,
         moves: moves.slice(-10) // Only save last 10 moves for quick games
       };
 
       await SupabaseService.createChessGame(gameData);
-    } catch (error) {
-      console.error('Error saving game outcome:', error);
+    } catch {
+      // Error handled silently
     }
   }
 

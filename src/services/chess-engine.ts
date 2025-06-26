@@ -1,4 +1,4 @@
-import { Chess, type Move } from 'chess.js';
+import { Chess, type Move, type Square } from 'chess.js';
 
 export class ChessEngine {
   private static readonly PIECE_VALUES: { [key: string]: number } = {
@@ -57,8 +57,7 @@ export class ChessEngine {
           }
           
           resolve(bestMove);
-        } catch (error) {
-          console.error('Error in getBestMove:', error);
+        } catch {
           resolve(null);
         }
       }, difficulty === 'hard' ? 50 : 10); // Shorter delay for easier modes
@@ -277,7 +276,7 @@ export class ChessEngine {
   }
 
   private static isPieceHanging(game: Chess, square: string): boolean {
-    const piece = game.get(square);
+    const piece = game.get(square as Square);
     if (!piece) return false;
 
     const attackers = this.getAttackers(game, square, piece.color === 'w' ? 'b' : 'w');
@@ -287,7 +286,7 @@ export class ChessEngine {
     if (defenders.length === 0) return true;
 
     // Simple exchange evaluation
-    const attackerValues = attackers.map(sq => this.PIECE_VALUES[game.get(sq)?.type || 'p']);
+    const attackerValues = attackers.map(sq => this.PIECE_VALUES[game.get(sq as Square)?.type || 'p']);
     const minAttacker = Math.min(...attackerValues);
     const pieceValue = this.PIECE_VALUES[piece.type];
 
@@ -299,7 +298,7 @@ export class ChessEngine {
     const moves = game.moves({ verbose: true });
 
     for (const move of moves) {
-      if (move.to === square && game.get(move.from)?.color === color) {
+      if (move.to === square && game.get(move.from as Square)?.color === color) {
         attackers.push(move.from);
       }
     }

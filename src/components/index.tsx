@@ -109,8 +109,8 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <motion.button
-      whileHover={isDisabled ? false : { scale: 1.02 }}
-      whileTap={isDisabled ? false : { scale: 0.98 }}
+      whileHover={isDisabled ? undefined : { scale: 1.02 }}
+      whileTap={isDisabled ? undefined : { scale: 0.98 }}
       className={clsx(
         buttonVariants({ variant, size, radius, loading }),
         className
