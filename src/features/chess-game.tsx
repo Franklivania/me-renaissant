@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components';
 import { Icon } from '@iconify/react';
 import { Chessboard } from 'react-chessboard';
@@ -7,6 +7,9 @@ import { Chess, type Square } from 'chess.js';
 import { ChessGameSetup } from './chess-setup';
 import { ChessAnalysisBoard } from './chess-analysis-board';
 import { ChessEngine } from '@/services/chess-engine.ts';
+import { ChessSessionService } from '@/services/chess-session-service';
+import { RenaissanceCommentary } from '@/services/renaissance-commentary';
+import { useProfileStore } from '@/store/useProfileStore';
 
 interface GameSettings {
   timeLimit: number | null; // in seconds, null for casual
@@ -26,6 +29,7 @@ interface GameMove {
 }
 
 export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+  const { doppelganger } = useProfileStore();
   const [gameStarted, setGameStarted] = useState(false);
   const [gameSettings, setGameSettings] = useState<GameSettings | null>(null);
   const [game, setGame] = useState<Chess>(new Chess());
@@ -42,6 +46,69 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [gameAnalysis, setGameAnalysis] = useState<string>('');
   const [winner, setWinner] = useState<string | null>(null);
   const [aiThinkingStartTime, setAiThinkingStartTime] = useState<number | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [commentary, setCommentary] = useState<string | null>(null);
+  const [lastMoveSquares, setLastMoveSquares] = useState<{ from: string; to: string } | null>(null);
+  const [animatingMove, setAnimatingMove] = useState(false);
+
+  // Check for existing session on component mount
+  useEffect(() => {
+    const loadExistingSession = async () => {
+      if (ChessSessionService.hasActiveSession()) {
+        const session = await ChessSessionService.loadGameSession();
+        if (session && session.gameStatus === 'playing') {
+          // Restore game state
+          setGameSettings(session.gameSettings);
+          setGameStarted(true);
+          setSessionId(session.id);
+          
+          const restoredGame = new Chess(session.currentFen);
+          setGame(restoredGame);
+          setMoves(session.moves);
+          setCapturedPieces(session.capturedPieces);
+          setWhiteTime(session.whiteTime);
+          setBlackTime(session.blackTime);
+          setCurrentTurn(session.currentTurn);
+          setGameStatus(session.gameStatus);
+          setWinner(session.winner);
+
+          // Show restoration message
+          setCommentary("Ah! Our game continues from where we left off. The pieces remember their positions, as do I our noble contest.");
+        }
+      }
+    };
+
+    loadExistingSession();
+  }, []);
+
+  // Auto-save session for custom/casual games
+  useEffect(() => {
+    if (gameStarted && gameSettings && (gameSettings.timeLimit === null || gameSettings.timeLimit >= 600)) {
+      const saveSession = async () => {
+        const session = {
+          id: sessionId || '',
+          gameSettings,
+          currentFen: game.fen(),
+          moves,
+          capturedPieces,
+          whiteTime,
+          blackTime,
+          gameStatus,
+          currentTurn,
+          lastMoveTime: Date.now(),
+          winner
+        };
+
+        await ChessSessionService.saveGameSession(session);
+        if (!sessionId && session.id) {
+          setSessionId(session.id);
+        }
+      };
+
+      const timeoutId = setTimeout(saveSession, 1000); // Debounce saves
+      return () => clearTimeout(timeoutId);
+    }
+  }, [gameStarted, gameSettings, game, moves, capturedPieces, whiteTime, blackTime, gameStatus, currentTurn, winner, sessionId]);
 
   // Timer effect with AI thinking time consideration
   useEffect(() => {
@@ -65,9 +132,11 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     if (whiteTime === 0) {
       setGameStatus('timeout');
       setWinner('Black wins by timeout');
+      setCommentary("Time has run out for White! Like sand through an hourglass, victory slips away. Black claims the crown by patience and persistence.");
     } else if (blackTime === 0) {
       setGameStatus('timeout');
       setWinner('White wins by timeout');
+      setCommentary("The clock strikes against Black! Time, that most precious of resources, has been exhausted. White emerges victorious through the passage of moments.");
     }
   }, [whiteTime, blackTime, gameStatus]);
 
@@ -102,6 +171,13 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     setWinner(null);
     setIsThinking(false);
     setAiThinkingStartTime(null);
+    setSessionId(null);
+    setCommentary(`Greetings, noble ${settings.playerColor} player! The board is set, the pieces await thy command. May this game be worthy of the masters of old!`);
+    setLastMoveSquares(null);
+    setAnimatingMove(false);
+
+    // Clear any existing session
+    ChessSessionService.clearGameSession();
   }, []);
 
   const resetGame = useCallback(() => {
@@ -121,6 +197,13 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     setWinner(null);
     setIsThinking(false);
     setAiThinkingStartTime(null);
+    setSessionId(null);
+    setCommentary(null);
+    setLastMoveSquares(null);
+    setAnimatingMove(false);
+
+    // Clear session
+    ChessSessionService.clearGameSession();
   }, []);
 
   const makeAIMove = useCallback(async () => {
@@ -128,6 +211,10 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     
     setIsThinking(true);
     setAiThinkingStartTime(Date.now());
+    
+    // Show thinking commentary
+    const thinkingComment = RenaissanceCommentary.getThinkingComment();
+    setCommentary(thinkingComment);
     
     try {
       // Use requestIdleCallback for better performance
@@ -144,17 +231,23 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
         // Use setTimeout to prevent blocking for hard mode
         if (gameSettings.difficulty === 'hard') {
-          setTimeout(callback, 100); // Small delay to prevent UI freeze
+          setTimeout(callback, 200); // Slightly longer delay for hard mode
         } else {
-          callback();
+          setTimeout(callback, 100);
         }
       });
       
       if (bestMove) {
-        const moveResult = game.move(bestMove);
-        if (moveResult) {
-          await processMoveResult(moveResult, true);
-        }
+        setAnimatingMove(true);
+        
+        // Add delay for move animation
+        setTimeout(() => {
+          const moveResult = game.move(bestMove);
+          if (moveResult) {
+            processMoveResult(moveResult, true);
+          }
+          setAnimatingMove(false);
+        }, 300); // Animation delay
       }
     } catch (error) {
       console.error('AI move error:', error);
@@ -177,6 +270,9 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       timestamp: Date.now()
     };
 
+    // Set last move squares for highlighting
+    setLastMoveSquares({ from: moveResult.from, to: moveResult.to });
+
     // Add to moves list
     setMoves(prev => [...prev, newMove]);
 
@@ -191,10 +287,30 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       }));
     }
 
+    // Generate Renaissance commentary
+    const gamePhase = RenaissanceCommentary.getGamePhase(moves.length);
+    const moveType = RenaissanceCommentary.getMoveType(moveResult, {});
+    const moveQuality = RenaissanceCommentary.evaluateMoveQuality(moveResult, {});
+    
+    const commentaryContext = {
+      moveType,
+      gamePhase,
+      playerAdvantage: 'equal' as const,
+      moveQuality,
+      isPlayerMove: !isAIMove
+    };
+
+    const newCommentary = RenaissanceCommentary.generateComment(commentaryContext, doppelganger);
+    if (newCommentary) {
+      setCommentary(newCommentary);
+    }
+
     // Check game status
     if (game.isCheckmate()) {
       setGameStatus('checkmate');
-      setWinner(`${game.turn() === 'w' ? 'Black' : 'White'} wins by checkmate!`);
+      const winnerText = `${game.turn() === 'w' ? 'Black' : 'White'} wins by checkmate!`;
+      setWinner(winnerText);
+      setCommentary(`Checkmate! The king falls, and our noble contest reaches its conclusion. ${game.turn() === 'w' ? 'Black' : 'White'} emerges victorious through superior strategy and tactical prowess!`);
       
       if (gameSettings?.difficulty === 'hard') {
         // Generate full game analysis for hard mode
@@ -205,12 +321,19 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           console.error('Game analysis error:', error);
         }
       }
+
+      // Save game outcome
+      if (gameSettings && (gameSettings.timeLimit === null || gameSettings.timeLimit < 600)) {
+        ChessSessionService.saveGameOutcome(gameSettings, winnerText, [...moves, newMove]);
+      }
     } else if (game.isStalemate()) {
       setGameStatus('stalemate');
       setWinner('Draw by stalemate');
+      setCommentary("Stalemate! A most curious conclusion - the king stands safe yet cannot move. In chess, as in life, sometimes the mightiest are bound by invisible chains. A draw it is!");
     } else if (game.isDraw()) {
       setGameStatus('draw');
       setWinner('Draw');
+      setCommentary("A draw! Like two master swordsmen whose skills are perfectly matched, neither can claim victory. Honor to both players for this well-fought contest!");
     }
 
     // Switch turns
@@ -244,10 +367,10 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     setSelectedSquare(null);
     setPossibleMoves([]);
     setErrorMessage(null);
-  }, [game, gameSettings, moves, aiThinkingStartTime]);
+  }, [game, gameSettings, moves, aiThinkingStartTime, doppelganger]);
 
   const onSquareClick = useCallback((square: string) => {
-    if (currentTurn !== gameSettings?.playerColor || gameStatus !== 'playing' || isThinking) return;
+    if (currentTurn !== gameSettings?.playerColor || gameStatus !== 'playing' || isThinking || animatingMove) return;
 
     // Clear error message
     setErrorMessage(null);
@@ -305,10 +428,10 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         setPossibleMoves([]);
       }
     }
-  }, [currentTurn, gameSettings, gameStatus, isThinking, selectedSquare, game, processMoveResult]);
+  }, [currentTurn, gameSettings, gameStatus, isThinking, animatingMove, selectedSquare, game, processMoveResult]);
 
   const onPieceDrop = useCallback((sourceSquare: string, targetSquare: string) => {
-    if (currentTurn !== gameSettings?.playerColor || gameStatus !== 'playing' || isThinking) return false;
+    if (currentTurn !== gameSettings?.playerColor || gameStatus !== 'playing' || isThinking || animatingMove) return false;
 
     try {
       const moveResult = game.move({
@@ -327,7 +450,7 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
 
     return false;
-  }, [currentTurn, gameSettings, gameStatus, isThinking, game, processMoveResult]);
+  }, [currentTurn, gameSettings, gameStatus, isThinking, animatingMove, game, processMoveResult]);
 
   const formatTime = useCallback((seconds: number | null) => {
     if (seconds === null) return '∞';
@@ -339,11 +462,24 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const customSquareStyles = useMemo(() => {
     const styles: { [square: string]: React.CSSProperties } = {};
 
+    // Highlight last move
+    if (lastMoveSquares) {
+      styles[lastMoveSquares.from] = {
+        backgroundColor: 'rgba(212, 175, 55, 0.3)',
+        border: '2px solid rgba(212, 175, 55, 0.6)'
+      };
+      styles[lastMoveSquares.to] = {
+        backgroundColor: 'rgba(212, 175, 55, 0.4)',
+        border: '2px solid #D4AF37'
+      };
+    }
+
     // Highlight selected square
     if (selectedSquare) {
       styles[selectedSquare] = {
-        backgroundColor: 'rgba(212, 175, 55, 0.4)',
-        border: '2px solid #D4AF37'
+        backgroundColor: 'rgba(212, 175, 55, 0.5)',
+        border: '3px solid #D4AF37',
+        boxShadow: '0 0 10px rgba(212, 175, 55, 0.6)'
       };
     }
 
@@ -352,13 +488,15 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       possibleMoves.forEach(square => {
         styles[square] = {
           backgroundColor: 'rgba(61, 153, 112, 0.6)',
-          border: '2px solid #3D9970'
+          border: '2px solid #3D9970',
+          borderRadius: '50%',
+          boxShadow: '0 0 8px rgba(61, 153, 112, 0.4)'
         };
       });
     }
 
     return styles;
-  }, [selectedSquare, possibleMoves, gameSettings?.difficulty]);
+  }, [selectedSquare, possibleMoves, gameSettings?.difficulty, lastMoveSquares]);
 
   if (!gameStarted) {
     return <ChessGameSetup onStartGame={startGame} onBack={onBack} />;
@@ -403,7 +541,16 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   <p className="text-sm">
                     Black {isThinking && currentTurn === 'black' ? '(Thinking...)' : ''}
                   </p>
-                  <p className="text-lg font-bold text-gold">{formatTime(blackTime)}</p>
+                  <motion.p 
+                    className="text-lg font-bold text-gold"
+                    animate={{ 
+                      scale: (currentTurn === 'black' && blackTime !== null && blackTime <= 30) ? [1, 1.1, 1] : 1,
+                      color: (blackTime !== null && blackTime <= 30) ? ['#D4AF37', '#ff6b6b', '#D4AF37'] : '#D4AF37'
+                    }}
+                    transition={{ duration: 1, repeat: (blackTime !== null && blackTime <= 30) ? Infinity : 0 }}
+                  >
+                    {formatTime(blackTime)}
+                  </motion.p>
                 </div>
                 <div className="text-center">
                   <p className="text-brown-100/80 mb-2">
@@ -422,14 +569,45 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   <p className="text-sm">
                     White {isThinking && currentTurn === 'white' ? '(Thinking...)' : ''}
                   </p>
-                  <p className="text-lg font-bold text-gold">{formatTime(whiteTime)}</p>
+                  <motion.p 
+                    className="text-lg font-bold text-gold"
+                    animate={{ 
+                      scale: (currentTurn === 'white' && whiteTime !== null && whiteTime <= 30) ? [1, 1.1, 1] : 1,
+                      color: (whiteTime !== null && whiteTime <= 30) ? ['#D4AF37', '#ff6b6b', '#D4AF37'] : '#D4AF37'
+                    }}
+                    transition={{ duration: 1, repeat: (whiteTime !== null && whiteTime <= 30) ? Infinity : 0 }}
+                  >
+                    {formatTime(whiteTime)}
+                  </motion.p>
                 </div>
               </div>
+
+              {/* Commentary */}
+              <AnimatePresence mode="wait">
+                {commentary && (
+                  <motion.div
+                    key={commentary}
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    className="mb-4 p-3 bg-brown-100/10 rounded-lg border border-brown-100/20"
+                  >
+                    <div className="flex items-start gap-2">
+                      <Icon icon="mdi:account-circle" className="w-5 h-5 text-gold mt-0.5 flex-shrink-0" />
+                      <p className="text-brown-100/90 text-sm italic font-im leading-relaxed">
+                        "{commentary}"
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {errorMessage && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
                   className="mb-4 p-2 bg-red-400/20 rounded-lg border border-red-400"
                 >
                   <p className="text-red-300 text-sm">{errorMessage}</p>
@@ -438,8 +616,9 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
               {gameStatus !== 'playing' && (
                 <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
                   className="p-4 bg-gold/20 rounded-lg border border-gold mb-4"
                 >
                   <p className="text-gold font-im text-xl">
@@ -460,7 +639,7 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                       className="w-4 h-4 border-2 border-brown-100/20 border-t-brown-100 rounded-full"
                     />
-                    <p className="text-brown-100/80 text-sm">AI is thinking...</p>
+                    <p className="text-brown-100/80 text-sm">AI is contemplating...</p>
                   </div>
                 </motion.div>
               )}
@@ -468,22 +647,31 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
             {/* Chess Board */}
             <div className="max-w-lg mx-auto">
-              <Chessboard
-                position={game.fen()}
-                onPieceDrop={onPieceDrop}
-                onSquareClick={onSquareClick}
-                boardOrientation={gameSettings?.playerColor || 'white'}
-                customSquareStyles={customSquareStyles}
-                customBoardStyle={{
-                  borderRadius: '8px',
-                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+              <motion.div
+                animate={{ 
+                  scale: animatingMove ? [1, 1.02, 1] : 1,
+                  rotateY: animatingMove ? [0, 2, 0] : 0
                 }}
-                customDarkSquareStyle={{ backgroundColor: '#7B2C3B' }}
-                customLightSquareStyle={{ backgroundColor: '#F5F0E1' }}
-                customDropSquareStyle={{ backgroundColor: '#D4AF37', opacity: 0.6 }}
-                areArrowsAllowed={false}
-                arePiecesDraggable={!isThinking}
-              />
+                transition={{ duration: 0.3 }}
+              >
+                <Chessboard
+                  position={game.fen()}
+                  onPieceDrop={onPieceDrop}
+                  onSquareClick={onSquareClick}
+                  boardOrientation={gameSettings?.playerColor || 'white'}
+                  customSquareStyles={customSquareStyles}
+                  customBoardStyle={{
+                    borderRadius: '8px',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+                  }}
+                  customDarkSquareStyle={{ backgroundColor: '#7B2C3B' }}
+                  customLightSquareStyle={{ backgroundColor: '#F5F0E1' }}
+                  customDropSquareStyle={{ backgroundColor: '#D4AF37', opacity: 0.6 }}
+                  areArrowsAllowed={false}
+                  arePiecesDraggable={!isThinking && !animatingMove}
+                  animationDuration={200}
+                />
+              </motion.div>
             </div>
 
             <div className="text-center mt-6">
