@@ -23,8 +23,9 @@ interface ChessAnalysisBoardProps {
   gameSettings: GameSettings | null;
   moves: GameMove[];
   capturedPieces: { white: string[], black: string[] };
-  gameStatus: 'playing' | 'checkmate' | 'stalemate' | 'draw';
+  gameStatus: 'playing' | 'checkmate' | 'stalemate' | 'draw' | 'timeout';
   gameAnalysis: string;
+  isThinking?: boolean;
 }
 
 const PIECE_VALUES: { [key: string]: number } = {
@@ -40,7 +41,8 @@ export const ChessAnalysisBoard: React.FC<ChessAnalysisBoardProps> = ({
   moves,
   capturedPieces,
   gameStatus,
-  gameAnalysis
+  gameAnalysis,
+  isThinking = false
 }) => {
   if (!gameSettings) return null;
 
@@ -63,28 +65,40 @@ export const ChessAnalysisBoard: React.FC<ChessAnalysisBoardProps> = ({
       animate={{ opacity: 1, x: 0 }}
       className="bg-black/30 backdrop-blur-sm rounded-lg p-6 h-fit max-h-[45em] overflow-x-hidden"
     >
-      <div className='w-full px-3 py-2 bg-brown-100/5 border-b border-brown-100'>
+      <div className='w-full px-3 py-2 bg-brown-100/5 border-b border-brown-100 mb-4'>
         <h4 className="text-xl font-im text-brown-100 flex items-center gap-2">
           <Icon icon="lucide:bar-chart-3" className="w-5 h-5" />
-          Play Board
+          Analysis Board
         </h4>
       </div>
 
       {/* Game Info */}
-      <div className="space-y-4 mb-6 ">
+      <div className="space-y-4 mb-6">
         <div className="p-3 bg-brown-100/5 rounded-lg">
           <h5 className="text-brown-100 font-medium mb-2">Game Type</h5>
           <div className="text-sm text-brown-100/70 space-y-1">
             <p>Difficulty: <span className="text-gold capitalize">{gameSettings.difficulty}</span></p>
             <p>Time: <span className="text-gold">{formatTime(gameSettings.timeLimit)}</span></p>
             <p>Playing as: <span className="text-gold capitalize">{gameSettings.playerColor}</span></p>
+            {gameSettings.difficulty === 'hard' && (
+              <p className="text-xs text-brown-100/50 italic">No move hints • Full analysis after game</p>
+            )}
           </div>
         </div>
 
         {/* Move Count */}
         <div className="p-3 bg-brown-100/5 rounded-lg">
           <h5 className="text-brown-100 font-medium mb-2">Moves Made</h5>
-          <p className="text-2xl font-bold text-gold">{moves.length}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-2xl font-bold text-gold">{moves.length}</p>
+            {isThinking && (
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                className="w-4 h-4 border-2 border-brown-100/20 border-t-brown-100 rounded-full"
+              />
+            )}
+          </div>
         </div>
       </div>
 
@@ -186,7 +200,7 @@ export const ChessAnalysisBoard: React.FC<ChessAnalysisBoardProps> = ({
 
       {/* Live Analysis for Easy/Medium */}
       {(gameSettings.difficulty === 'easy' || gameSettings.difficulty === 'medium') &&
-        gameStatus === 'playing' && moves.length > 0 && (
+        gameStatus === 'playing' && (
           <div className="space-y-4">
             <h5 className="text-brown-100 font-medium flex items-center gap-2">
               <Icon icon="lucide:lightbulb" className="w-4 h-4" />
@@ -202,6 +216,22 @@ export const ChessAnalysisBoard: React.FC<ChessAnalysisBoardProps> = ({
             </div>
           </div>
         )}
+
+      {/* Performance Status */}
+      {isThinking && gameSettings.difficulty === 'hard' && (
+        <div className="mt-4 p-3 bg-brown-100/5 rounded-lg border border-brown-100/20">
+          <div className="flex items-center gap-2">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="w-4 h-4 border-2 border-brown-100/20 border-t-brown-100 rounded-full"
+            />
+            <p className="text-sm text-brown-100/70">
+              AI calculating optimal move...
+            </p>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };
