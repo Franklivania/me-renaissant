@@ -140,63 +140,6 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
   }, [whiteTime, blackTime, gameStatus]);
 
-  const makeAIMove = useCallback(async () => {
-    if (!gameSettings || isThinking) return;
-    
-    setIsThinking(true);
-    setAiThinkingStartTime(Date.now());
-    
-    // Show thinking commentary
-    const thinkingComment = RenaissanceCommentary.getThinkingComment();
-    setCommentary(thinkingComment);
-    
-    try {
-      // Use requestIdleCallback for better performance
-      const bestMove = await new Promise<Move | null>((resolve) => {
-        const callback = async () => {
-          try {
-            const move = await ChessEngine.getBestMove(game.fen(), gameSettings.difficulty);
-            resolve(move);
-          } catch {
-            resolve(null);
-          }
-        };
-
-        // Use setTimeout to prevent blocking for hard mode
-        if (gameSettings.difficulty === 'hard') {
-          setTimeout(callback, 200); // Slightly longer delay for hard mode
-        } else {
-          setTimeout(callback, 100);
-        }
-      });
-      
-      if (bestMove) {
-        setAnimatingMove(true);
-        
-        // Add delay for move animation
-        setTimeout(() => {
-          const moveResult = game.move(bestMove);
-          if (moveResult) {
-            processMoveResult(moveResult, true);
-          }
-          setAnimatingMove(false);
-        }, 300); // Animation delay
-      }
-    } catch {
-      // Error handled in promise
-    } finally {
-      setIsThinking(false);
-      setAiThinkingStartTime(null);
-    }
-  }, [game, gameSettings, isThinking]);
-
-  // AI move effect with performance optimization
-  useEffect(() => {
-    if (gameStarted && currentTurn !== gameSettings?.playerColor && gameStatus === 'playing' && !isThinking) {
-      makeAIMove();
-    }
-  }, [currentTurn, gameStarted, gameSettings, gameStatus, isThinking, makeAIMove]);
-
   const processMoveResult = useCallback(async (moveResult: Move, isAIMove: boolean = false) => {
     const thinkingTime = aiThinkingStartTime ? Date.now() - aiThinkingStartTime : 0;
     
@@ -308,6 +251,63 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     setPossibleMoves([]);
     setErrorMessage(null);
   }, [game, gameSettings, moves, aiThinkingStartTime, doppelganger]);
+
+  const makeAIMove = useCallback(async () => {
+    if (!gameSettings || isThinking) return;
+    
+    setIsThinking(true);
+    setAiThinkingStartTime(Date.now());
+    
+    // Show thinking commentary
+    const thinkingComment = RenaissanceCommentary.getThinkingComment();
+    setCommentary(thinkingComment);
+    
+    try {
+      // Use requestIdleCallback for better performance
+      const bestMove = await new Promise<Move | null>((resolve) => {
+        const callback = async () => {
+          try {
+            const move = await ChessEngine.getBestMove(game.fen(), gameSettings.difficulty);
+            resolve(move);
+          } catch {
+            resolve(null);
+          }
+        };
+
+        // Use setTimeout to prevent blocking for hard mode
+        if (gameSettings.difficulty === 'hard') {
+          setTimeout(callback, 200); // Slightly longer delay for hard mode
+        } else {
+          setTimeout(callback, 100);
+        }
+      });
+      
+      if (bestMove) {
+        setAnimatingMove(true);
+        
+        // Add delay for move animation
+        setTimeout(() => {
+          const moveResult = game.move(bestMove);
+          if (moveResult) {
+            processMoveResult(moveResult, true);
+          }
+          setAnimatingMove(false);
+        }, 300); // Animation delay
+      }
+    } catch {
+      // Error handled in promise
+    } finally {
+      setIsThinking(false);
+      setAiThinkingStartTime(null);
+    }
+  }, [game, gameSettings, isThinking, processMoveResult]);
+
+  // AI move effect with performance optimization
+  useEffect(() => {
+    if (gameStarted && currentTurn !== gameSettings?.playerColor && gameStatus === 'playing' && !isThinking) {
+      makeAIMove();
+    }
+  }, [currentTurn, gameStarted, gameSettings, gameStatus, isThinking, makeAIMove]);
 
   const startGame = useCallback((settings: GameSettings) => {
     setGameSettings(settings);

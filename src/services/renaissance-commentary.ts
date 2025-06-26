@@ -142,7 +142,7 @@ export class RenaissanceCommentary {
 
   static generateComment(
     context: CommentaryContext,
-    doppelganger?: DoppelgangerPersona
+    _doppelganger?: DoppelgangerPersona
   ): string | null {
     // 60% chance to comment on player moves, 30% on AI moves
     const shouldComment = context.isPlayerMove ? Math.random() < 0.6 : Math.random() < 0.3;
@@ -224,7 +224,7 @@ export class RenaissanceCommentary {
 
   static evaluateMoveQuality(
     move: MoveData,
-    gameContext: GameContext
+    _gameContext: GameContext
   ): 'excellent' | 'good' | 'questionable' | 'poor' {
     // Simple heuristic evaluation
     let score = 0;
@@ -252,7 +252,7 @@ export class RenaissanceCommentary {
     return 'poor';
   }
 
-  static getMoveType(move: MoveData, gameContext: GameContext): CommentaryContext['moveType'] {
+  static getMoveType(move: MoveData, _gameContext: GameContext): CommentaryContext['moveType'] {
     if (move.san?.includes('#')) return 'brilliant'; // Checkmate
     if (move.captured) return 'capture';
     if (move.san?.includes('+')) return 'check';
