@@ -1,4 +1,4 @@
-import { Chess } from 'chess.js';
+import { Chess, type Move } from 'chess.js';
 
 export class ChessEngine {
   private static readonly PIECE_VALUES: { [key: string]: number } = {
@@ -28,7 +28,7 @@ export class ChessEngine {
     ]
   };
 
-  static async getBestMove(fen: string, difficulty: 'easy' | 'medium' | 'hard'): Promise<any> {
+  static async getBestMove(fen: string, difficulty: 'easy' | 'medium' | 'hard'): Promise<Move | null> {
     return new Promise((resolve) => {
       // Use setTimeout to prevent blocking the main thread
       setTimeout(() => {
@@ -65,7 +65,7 @@ export class ChessEngine {
     });
   }
 
-  private static getEasyMove(game: Chess, moves: any[]): any {
+  private static getEasyMove(game: Chess, moves: Move[]): Move {
     // Easy mode: 70% random moves, 30% basic strategy
     if (Math.random() < 0.7) {
       return moves[Math.floor(Math.random() * moves.length)];
@@ -89,9 +89,9 @@ export class ChessEngine {
       : moves[Math.floor(Math.random() * moves.length)];
   }
 
-  private static getMediumMove(game: Chess, moves: any[]): any {
+  private static getMediumMove(game: Chess, moves: Move[]): Move {
     // Medium mode: improved evaluation with tactical awareness
-    let bestMove = null;
+    let bestMove: Move | null = null;
     let bestScore = -Infinity;
 
     for (const move of moves) {
@@ -152,9 +152,9 @@ export class ChessEngine {
     return bestMove || moves[Math.floor(Math.random() * moves.length)];
   }
 
-  private static getHardMove(game: Chess, moves: any[]): any {
+  private static getHardMove(game: Chess, moves: Move[]): Move {
     // Hard mode: optimized minimax with iterative deepening
-    let bestMove = null;
+    let bestMove: Move | null = null;
     let bestScore = -Infinity;
 
     // Sort moves for better alpha-beta pruning
@@ -178,7 +178,7 @@ export class ChessEngine {
     return bestMove || moves[Math.floor(Math.random() * moves.length)];
   }
 
-  private static sortMoves(game: Chess, moves: any[]): any[] {
+  private static sortMoves(game: Chess, moves: Move[]): Move[] {
     // Sort moves for better alpha-beta pruning
     return moves.sort((a, b) => {
       let scoreA = 0, scoreB = 0;
@@ -252,8 +252,8 @@ export class ChessEngine {
           let positionalValue = 0;
 
           // Add positional bonuses for pawns and knights
-          if (this.POSITION_TABLES[piece.type]) {
-            const table = this.POSITION_TABLES[piece.type];
+          if (this.POSITION_TABLES[piece.type as keyof typeof this.POSITION_TABLES]) {
+            const table = this.POSITION_TABLES[piece.type as keyof typeof this.POSITION_TABLES];
             positionalValue = piece.color === 'w' ? table[i][j] : table[7-i][j];
             positionalValue /= 100; // Scale down positional values
           }
@@ -288,8 +288,6 @@ export class ChessEngine {
 
     // Simple exchange evaluation
     const attackerValues = attackers.map(sq => this.PIECE_VALUES[game.get(sq)?.type || 'p']);
-    const defenderValues = defenders.map(sq => this.PIECE_VALUES[game.get(sq)?.type || 'p']);
-
     const minAttacker = Math.min(...attackerValues);
     const pieceValue = this.PIECE_VALUES[piece.type];
 
@@ -309,7 +307,7 @@ export class ChessEngine {
     return attackers;
   }
 
-  static async analyzeMove(move: any, fen: string): Promise<string> {
+  static async analyzeMove(move: Move, fen: string): Promise<string> {
     return new Promise((resolve) => {
       setTimeout(() => {
         try {
@@ -345,14 +343,14 @@ export class ChessEngine {
           }
 
           resolve(analyses.length > 0 ? analyses.join(", ") : "Solid move");
-        } catch (error) {
+        } catch {
           resolve("Move played");
         }
       }, 10);
     });
   }
 
-  static async analyzeGame(moves: any[]): Promise<string> {
+  static async analyzeGame(moves: GameMove[]): Promise<string> {
     return new Promise((resolve) => {
       setTimeout(() => {
         try {
@@ -396,10 +394,21 @@ export class ChessEngine {
           analysis += "Both players demonstrated good understanding of chess principles.";
 
           resolve(analysis);
-        } catch (error) {
+        } catch {
           resolve("Game analysis completed.");
         }
       }, 100);
     });
   }
+}
+
+interface GameMove {
+  from: string;
+  to: string;
+  piece: string;
+  captured?: string;
+  san: string;
+  fen: string;
+  timestamp: number;
+  analysis?: string;
 }

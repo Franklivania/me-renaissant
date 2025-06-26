@@ -14,7 +14,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Validate URL format
 try {
   new URL(supabaseUrl);
-} catch (error) {
+} catch {
   console.error('Invalid Supabase URL:', supabaseUrl);
   throw new Error(`Invalid Supabase URL format: ${supabaseUrl}`);
 }

@@ -8,6 +8,21 @@ interface CommentaryContext {
   isPlayerMove: boolean;
 }
 
+interface MoveData {
+  from: string;
+  to: string;
+  piece: string;
+  captured?: string;
+  san: string;
+  promotion?: string;
+}
+
+interface GameContext {
+  moveCount?: number;
+  isCheck?: boolean;
+  isCheckmate?: boolean;
+}
+
 export class RenaissanceCommentary {
   private static readonly MOVE_COMMENTS = {
     capture: {
@@ -208,8 +223,8 @@ export class RenaissanceCommentary {
   }
 
   static evaluateMoveQuality(
-    move: any,
-    gameContext: any
+    move: MoveData,
+    gameContext: GameContext
   ): 'excellent' | 'good' | 'questionable' | 'poor' {
     // Simple heuristic evaluation
     let score = 0;
@@ -237,7 +252,7 @@ export class RenaissanceCommentary {
     return 'poor';
   }
 
-  static getMoveType(move: any, gameContext: any): CommentaryContext['moveType'] {
+  static getMoveType(move: MoveData, gameContext: GameContext): CommentaryContext['moveType'] {
     if (move.san?.includes('#')) return 'brilliant'; // Checkmate
     if (move.captured) return 'capture';
     if (move.san?.includes('+')) return 'check';

@@ -117,7 +117,7 @@ export const Button: React.FC<ButtonProps> = ({
       )}
       disabled={isDisabled}
       data-loading={loading ? 'true' : 'false'}
-      {...(props as any)}
+      {...props}
     >
       <span className="flex items-center gap-2">
         {children}

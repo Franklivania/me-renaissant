@@ -6,7 +6,7 @@ import { Icon } from "@iconify/react"
 import Image from "@/components/image"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { useChatStore } from "@/store/useChatStore"
-import { useRef, useState } from "react"
+import { useRef } from "react"
 import { ChatActions } from "@/components/chat-actions"
 import clsx from 'clsx'
 
@@ -31,7 +31,6 @@ const MobileNavItem = ({
 }: MobileNavItemProps) => {
   const { activeDropdown, setActiveDropdown, closeDropdown } = useChatActionsStore()
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const [isOpen, setIsOpen] = useState(false)
   
   const isDropdownOpen = activeDropdown === conversationId
 
@@ -39,10 +38,8 @@ const MobileNavItem = ({
     e.stopPropagation()
     if (isDropdownOpen) {
       closeDropdown()
-      setIsOpen(false)
     } else {
       setActiveDropdown(conversationId!)
-      setIsOpen(true)
     }
   }
 
@@ -111,7 +108,7 @@ export default function MobileSidebar() {
   const [searchParams] = useSearchParams()
   const currentChat = searchParams.get('chat')
   const { expand, setExpand } = useSidebarStore()
-  const { conversations, loadConversations, isConnected } = useChatStore()
+  const { conversations } = useChatStore()
   const { closeDropdown } = useChatActionsStore()
 
   const closeSidebar = () => {

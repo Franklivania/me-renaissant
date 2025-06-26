@@ -50,7 +50,7 @@ export interface ChessGame {
   time_limit: number | null;
   player_color: 'white' | 'black';
   current_fen: string;
-  moves: any[];
+  moves: ChessMove[];
   captured_pieces: {
     black: string[];
     white: string[];
@@ -61,4 +61,15 @@ export interface ChessGame {
   black_time_remaining: number | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ChessMove {
+  from: string;
+  to: string;
+  piece: string;
+  captured?: string;
+  san: string;
+  fen: string;
+  timestamp: number;
+  analysis?: string;
 }

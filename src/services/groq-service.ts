@@ -81,7 +81,7 @@ export class GroqService {
           console.error('Groq server error');
         }
       }
-      return this.getFallbackResponse(doppelganger);
+      return this.getFallbackResponse();
     }
   }
 
@@ -124,7 +124,7 @@ RESPONSE STYLE:
 - Match the tone and urgency of the conversation`;
   }
 
-  private static getFallbackResponse(doppelganger: DoppelgangerPersona): string {
+  private static getFallbackResponse(): string {
     const fallbacks = [
       `Ah, dear kindred soul, the winds of time seem to whisper thy words away from mine ears. Speak again, that I might hear thee clearly.`,
       `Forgive me, but the candle of my thoughts flickers in this moment. What wisdom dost thou seek from thy Renaissance mirror?`,

@@ -9,7 +9,7 @@ interface ChessGameSession {
     playerColor: 'white' | 'black';
   };
   currentFen: string;
-  moves: any[];
+  moves: ChessMove[];
   capturedPieces: { white: string[], black: string[] };
   whiteTime: number | null;
   blackTime: number | null;
@@ -17,6 +17,23 @@ interface ChessGameSession {
   currentTurn: 'white' | 'black';
   lastMoveTime: number;
   winner: string | null;
+}
+
+interface ChessMove {
+  from: string;
+  to: string;
+  piece: string;
+  captured?: string;
+  san: string;
+  fen: string;
+  timestamp: number;
+  analysis?: string;
+}
+
+interface GameSettings {
+  timeLimit: number | null;
+  difficulty: 'easy' | 'medium' | 'hard';
+  playerColor: 'white' | 'black';
 }
 
 export class ChessSessionService {
@@ -107,7 +124,7 @@ export class ChessSessionService {
   }
 
   // Save only game outcome for quick games
-  static async saveGameOutcome(gameSettings: any, winner: string, moves: any[]): Promise<void> {
+  static async saveGameOutcome(gameSettings: GameSettings, winner: string, moves: ChessMove[]): Promise<void> {
     try {
       const gameData: Partial<ChessGame> = {
         game_mode: 'quick',
@@ -138,7 +155,7 @@ export class ChessSessionService {
       capturedPieces: game.captured_pieces || { white: [], black: [] },
       whiteTime: game.white_time_remaining,
       blackTime: game.black_time_remaining,
-      gameStatus: game.game_status as any,
+      gameStatus: game.game_status as ChessGameSession['gameStatus'],
       currentTurn: game.current_fen.includes(' w ') ? 'white' : 'black',
       lastMoveTime: new Date(game.updated_at).getTime(),
       winner: game.winner

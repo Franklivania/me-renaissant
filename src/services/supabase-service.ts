@@ -15,7 +15,7 @@ export class SupabaseService {
   // Test connection
   static async testConnection(): Promise<boolean> {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('profiles')
         .select('count')
         .limit(1);
@@ -308,7 +308,7 @@ export class SupabaseService {
 
   // Real-time subscriptions
   static subscribeToConversations(
-    callback: (payload: any) => void,
+    callback: (payload: RealtimePayload) => void,
     conversationId?: string
   ) {
     const sessionId = this.getSessionId();
@@ -345,4 +345,12 @@ export class SupabaseService {
       supabase.removeChannel(channel);
     };
   }
+}
+
+interface RealtimePayload {
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+  new: Record<string, unknown>;
+  old: Record<string, unknown>;
+  schema: string;
+  table: string;
 }

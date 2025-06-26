@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components';
 import { Icon } from '@iconify/react';
 import { Chessboard } from 'react-chessboard';
-import { Chess, type Square } from 'chess.js';
+import { Chess, type Square, type Move } from 'chess.js';
 import { ChessGameSetup } from './chess-setup';
 import { ChessAnalysisBoard } from './chess-analysis-board';
-import { ChessEngine } from '@/services/chess-engine.ts';
+import { ChessEngine } from '@/services/chess-engine';
 import { ChessSessionService } from '@/services/chess-session-service';
 import { RenaissanceCommentary } from '@/services/renaissance-commentary';
 import { useProfileStore } from '@/store/useProfileStore';
@@ -140,12 +140,174 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
   }, [whiteTime, blackTime, gameStatus]);
 
+  const makeAIMove = useCallback(async () => {
+    if (!gameSettings || isThinking) return;
+    
+    setIsThinking(true);
+    setAiThinkingStartTime(Date.now());
+    
+    // Show thinking commentary
+    const thinkingComment = RenaissanceCommentary.getThinkingComment();
+    setCommentary(thinkingComment);
+    
+    try {
+      // Use requestIdleCallback for better performance
+      const bestMove = await new Promise<Move | null>((resolve) => {
+        const callback = async () => {
+          try {
+            const move = await ChessEngine.getBestMove(game.fen(), gameSettings.difficulty);
+            resolve(move);
+          } catch {
+            resolve(null);
+          }
+        };
+
+        // Use setTimeout to prevent blocking for hard mode
+        if (gameSettings.difficulty === 'hard') {
+          setTimeout(callback, 200); // Slightly longer delay for hard mode
+        } else {
+          setTimeout(callback, 100);
+        }
+      });
+      
+      if (bestMove) {
+        setAnimatingMove(true);
+        
+        // Add delay for move animation
+        setTimeout(() => {
+          const moveResult = game.move(bestMove);
+          if (moveResult) {
+            processMoveResult(moveResult, true);
+          }
+          setAnimatingMove(false);
+        }, 300); // Animation delay
+      }
+    } catch {
+      // Error handled in promise
+    } finally {
+      setIsThinking(false);
+      setAiThinkingStartTime(null);
+    }
+  }, [game, gameSettings, isThinking]);
+
   // AI move effect with performance optimization
   useEffect(() => {
     if (gameStarted && currentTurn !== gameSettings?.playerColor && gameStatus === 'playing' && !isThinking) {
       makeAIMove();
     }
-  }, [currentTurn, gameStarted, gameSettings, gameStatus]);
+  }, [currentTurn, gameStarted, gameSettings, gameStatus, isThinking, makeAIMove]);
+
+  const processMoveResult = useCallback(async (moveResult: Move, isAIMove: boolean = false) => {
+    const thinkingTime = aiThinkingStartTime ? Date.now() - aiThinkingStartTime : 0;
+    
+    const newMove: GameMove = {
+      from: moveResult.from,
+      to: moveResult.to,
+      piece: moveResult.piece,
+      captured: moveResult.captured,
+      san: moveResult.san,
+      fen: game.fen(),
+      timestamp: Date.now()
+    };
+
+    // Set last move squares for highlighting
+    setLastMoveSquares({ from: moveResult.from, to: moveResult.to });
+
+    // Add to moves list
+    setMoves(prev => [...prev, newMove]);
+
+    // Update captured pieces
+    if (moveResult.captured) {
+      setCapturedPieces(prev => ({
+        ...prev,
+        [moveResult.color === 'w' ? 'white' : 'black']: [
+          ...prev[moveResult.color === 'w' ? 'white' : 'black'],
+          moveResult.captured!
+        ]
+      }));
+    }
+
+    // Generate Renaissance commentary
+    const gamePhase = RenaissanceCommentary.getGamePhase(moves.length);
+    const moveType = RenaissanceCommentary.getMoveType(moveResult, {});
+    const moveQuality = RenaissanceCommentary.evaluateMoveQuality(moveResult, {});
+    
+    const commentaryContext = {
+      moveType,
+      gamePhase,
+      playerAdvantage: 'equal' as const,
+      moveQuality,
+      isPlayerMove: !isAIMove
+    };
+
+    const newCommentary = RenaissanceCommentary.generateComment(commentaryContext, doppelganger);
+    if (newCommentary) {
+      setCommentary(newCommentary);
+    }
+
+    // Check game status
+    if (game.isCheckmate()) {
+      setGameStatus('checkmate');
+      const winnerText = `${game.turn() === 'w' ? 'Black' : 'White'} wins by checkmate!`;
+      setWinner(winnerText);
+      setCommentary(`Checkmate! The king falls, and our noble contest reaches its conclusion. ${game.turn() === 'w' ? 'Black' : 'White'} emerges victorious through superior strategy and tactical prowess!`);
+      
+      if (gameSettings?.difficulty === 'hard') {
+        // Generate full game analysis for hard mode
+        try {
+          const analysis = await ChessEngine.analyzeGame(moves);
+          setGameAnalysis(analysis);
+        } catch {
+          // Error handled silently
+        }
+      }
+
+      // Save game outcome
+      if (gameSettings && (gameSettings.timeLimit === null || gameSettings.timeLimit < 600)) {
+        ChessSessionService.saveGameOutcome(gameSettings, winnerText, [...moves, newMove]);
+      }
+    } else if (game.isStalemate()) {
+      setGameStatus('stalemate');
+      setWinner('Draw by stalemate');
+      setCommentary("Stalemate! A most curious conclusion - the king stands safe yet cannot move. In chess, as in life, sometimes the mightiest are bound by invisible chains. A draw it is!");
+    } else if (game.isDraw()) {
+      setGameStatus('draw');
+      setWinner('Draw');
+      setCommentary("A draw! Like two master swordsmen whose skills are perfectly matched, neither can claim victory. Honor to both players for this well-fought contest!");
+    }
+
+    // Switch turns
+    setCurrentTurn(game.turn() === 'w' ? 'white' : 'black');
+
+    // Adjust timer for AI thinking time (only for AI moves)
+    if (isAIMove && gameSettings?.timeLimit && thinkingTime > 0) {
+      const aiColor = gameSettings.playerColor === 'white' ? 'black' : 'white';
+      const timeUsed = Math.ceil(thinkingTime / 1000);
+      
+      if (aiColor === 'white') {
+        setWhiteTime(prev => prev ? Math.max(0, prev - timeUsed) : null);
+      } else {
+        setBlackTime(prev => prev ? Math.max(0, prev - timeUsed) : null);
+      }
+    }
+
+    // Get move analysis for easy/medium modes
+    if (!isAIMove && (gameSettings?.difficulty === 'easy' || gameSettings?.difficulty === 'medium')) {
+      try {
+        const analysis = await ChessEngine.analyzeMove(moveResult, game.fen());
+        setMoves(prev => prev.map((move, index) => 
+          index === prev.length - 1 ? { ...move, analysis } : move
+        ));
+      } catch {
+        // Error handled silently
+      }
+    }
+
+    // Clear selection
+    setSelectedSquare(null);
+    setPossibleMoves([]);
+    setErrorMessage(null);
+  }, [game, gameSettings, moves, aiThinkingStartTime, doppelganger]);
 
   const startGame = useCallback((settings: GameSettings) => {
     setGameSettings(settings);
@@ -206,169 +368,6 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     ChessSessionService.clearGameSession();
   }, []);
 
-  const makeAIMove = useCallback(async () => {
-    if (!gameSettings || isThinking) return;
-    
-    setIsThinking(true);
-    setAiThinkingStartTime(Date.now());
-    
-    // Show thinking commentary
-    const thinkingComment = RenaissanceCommentary.getThinkingComment();
-    setCommentary(thinkingComment);
-    
-    try {
-      // Use requestIdleCallback for better performance
-      const bestMove = await new Promise((resolve) => {
-        const callback = async () => {
-          try {
-            const move = await ChessEngine.getBestMove(game.fen(), gameSettings.difficulty);
-            resolve(move);
-          } catch (error) {
-            console.error('AI move calculation error:', error);
-            resolve(null);
-          }
-        };
-
-        // Use setTimeout to prevent blocking for hard mode
-        if (gameSettings.difficulty === 'hard') {
-          setTimeout(callback, 200); // Slightly longer delay for hard mode
-        } else {
-          setTimeout(callback, 100);
-        }
-      });
-      
-      if (bestMove) {
-        setAnimatingMove(true);
-        
-        // Add delay for move animation
-        setTimeout(() => {
-          const moveResult = game.move(bestMove);
-          if (moveResult) {
-            processMoveResult(moveResult, true);
-          }
-          setAnimatingMove(false);
-        }, 300); // Animation delay
-      }
-    } catch (error) {
-      console.error('AI move error:', error);
-    } finally {
-      setIsThinking(false);
-      setAiThinkingStartTime(null);
-    }
-  }, [game, gameSettings, isThinking]);
-
-  const processMoveResult = useCallback(async (moveResult: any, isAIMove: boolean = false) => {
-    const thinkingTime = aiThinkingStartTime ? Date.now() - aiThinkingStartTime : 0;
-    
-    const newMove: GameMove = {
-      from: moveResult.from,
-      to: moveResult.to,
-      piece: moveResult.piece,
-      captured: moveResult.captured,
-      san: moveResult.san,
-      fen: game.fen(),
-      timestamp: Date.now()
-    };
-
-    // Set last move squares for highlighting
-    setLastMoveSquares({ from: moveResult.from, to: moveResult.to });
-
-    // Add to moves list
-    setMoves(prev => [...prev, newMove]);
-
-    // Update captured pieces
-    if (moveResult.captured) {
-      setCapturedPieces(prev => ({
-        ...prev,
-        [moveResult.color === 'w' ? 'white' : 'black']: [
-          ...prev[moveResult.color === 'w' ? 'white' : 'black'],
-          moveResult.captured
-        ]
-      }));
-    }
-
-    // Generate Renaissance commentary
-    const gamePhase = RenaissanceCommentary.getGamePhase(moves.length);
-    const moveType = RenaissanceCommentary.getMoveType(moveResult, {});
-    const moveQuality = RenaissanceCommentary.evaluateMoveQuality(moveResult, {});
-    
-    const commentaryContext = {
-      moveType,
-      gamePhase,
-      playerAdvantage: 'equal' as const,
-      moveQuality,
-      isPlayerMove: !isAIMove
-    };
-
-    const newCommentary = RenaissanceCommentary.generateComment(commentaryContext, doppelganger);
-    if (newCommentary) {
-      setCommentary(newCommentary);
-    }
-
-    // Check game status
-    if (game.isCheckmate()) {
-      setGameStatus('checkmate');
-      const winnerText = `${game.turn() === 'w' ? 'Black' : 'White'} wins by checkmate!`;
-      setWinner(winnerText);
-      setCommentary(`Checkmate! The king falls, and our noble contest reaches its conclusion. ${game.turn() === 'w' ? 'Black' : 'White'} emerges victorious through superior strategy and tactical prowess!`);
-      
-      if (gameSettings?.difficulty === 'hard') {
-        // Generate full game analysis for hard mode
-        try {
-          const analysis = await ChessEngine.analyzeGame(moves);
-          setGameAnalysis(analysis);
-        } catch (error) {
-          console.error('Game analysis error:', error);
-        }
-      }
-
-      // Save game outcome
-      if (gameSettings && (gameSettings.timeLimit === null || gameSettings.timeLimit < 600)) {
-        ChessSessionService.saveGameOutcome(gameSettings, winnerText, [...moves, newMove]);
-      }
-    } else if (game.isStalemate()) {
-      setGameStatus('stalemate');
-      setWinner('Draw by stalemate');
-      setCommentary("Stalemate! A most curious conclusion - the king stands safe yet cannot move. In chess, as in life, sometimes the mightiest are bound by invisible chains. A draw it is!");
-    } else if (game.isDraw()) {
-      setGameStatus('draw');
-      setWinner('Draw');
-      setCommentary("A draw! Like two master swordsmen whose skills are perfectly matched, neither can claim victory. Honor to both players for this well-fought contest!");
-    }
-
-    // Switch turns
-    setCurrentTurn(game.turn() === 'w' ? 'white' : 'black');
-
-    // Adjust timer for AI thinking time (only for AI moves)
-    if (isAIMove && gameSettings?.timeLimit && thinkingTime > 0) {
-      const aiColor = gameSettings.playerColor === 'white' ? 'black' : 'white';
-      const timeUsed = Math.ceil(thinkingTime / 1000);
-      
-      if (aiColor === 'white') {
-        setWhiteTime(prev => prev ? Math.max(0, prev - timeUsed) : null);
-      } else {
-        setBlackTime(prev => prev ? Math.max(0, prev - timeUsed) : null);
-      }
-    }
-
-    // Get move analysis for easy/medium modes
-    if (!isAIMove && (gameSettings?.difficulty === 'easy' || gameSettings?.difficulty === 'medium')) {
-      try {
-        const analysis = await ChessEngine.analyzeMove(moveResult, game.fen());
-        setMoves(prev => prev.map((move, index) => 
-          index === prev.length - 1 ? { ...move, analysis } : move
-        ));
-      } catch (error) {
-        console.error('Move analysis error:', error);
-      }
-    }
-
-    // Clear selection
-    setSelectedSquare(null);
-    setPossibleMoves([]);
-    setErrorMessage(null);
-  }, [game, gameSettings, moves, aiThinkingStartTime, doppelganger]);
-
   const onSquareClick = useCallback((square: string) => {
     if (currentTurn !== gameSettings?.playerColor || gameStatus !== 'playing' || isThinking || animatingMove) return;
 
@@ -408,7 +407,7 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       if (moveResult) {
         processMoveResult(moveResult);
       }
-    } catch (error) {
+    } catch {
       // Invalid move
       setErrorMessage('Invalid move! Try again.');
       setTimeout(() => setErrorMessage(null), 2000);
@@ -444,7 +443,7 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         processMoveResult(moveResult);
         return true;
       }
-    } catch (error) {
+    } catch {
       setErrorMessage('Invalid move! Try again.');
       setTimeout(() => setErrorMessage(null), 2000);
     }

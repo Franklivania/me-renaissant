@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 import Introduction from './intro';
@@ -35,10 +35,10 @@ export default function OnboardingPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   
-  const getCurrentStep = (): OnboardingStep => {
+  const getCurrentStep = useCallback((): OnboardingStep => {
     const pathParam = searchParams.get('path') as OnboardingStep;
     return pathParam && ONBOARDING_STEPS.includes(pathParam) ? pathParam : 'intro';
-  };
+  }, [searchParams]);
 
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(getCurrentStep);
 
@@ -49,7 +49,7 @@ export default function OnboardingPage() {
     if (!searchParams.get('path')) {
       setSearchParams({ path: 'intro' });
     }
-  }, [searchParams]);
+  }, [searchParams, getCurrentStep, setSearchParams]);
 
   const handleContinue = () => {
     const currentIndex = ONBOARDING_STEPS.indexOf(currentStep);

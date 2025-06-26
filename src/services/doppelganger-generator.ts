@@ -96,7 +96,7 @@ export class DoppelgangerGenerator {
     // Generate occupation and title
     const occupations = OCCUPATION_MAPPINGS[data.role] || ['Artisan of Unknown Arts'];
     const occupation = this.getRandomFromArray(occupations);
-    const title = this.generateTitle(data, occupation);
+    const title = this.generateTitle(data);
 
     // Generate personality traits
     const traits = this.generatePersonalityTraits(data.hobbies);
@@ -105,7 +105,7 @@ export class DoppelgangerGenerator {
     const speakingStyle = this.determineSpeakingStyle(data);
 
     // Generate background story
-    const description = this.generateBackgroundStory(name, occupation, data, traits);
+    const description = this.generateBackgroundStory(name, data, traits);
 
     return {
       name,
@@ -136,7 +136,7 @@ export class DoppelgangerGenerator {
     }
   }
 
-  private static generateTitle(data: OnboardingData, occupation: string): string {
+  private static generateTitle(data: OnboardingData): string {
     const titlePrefixes = [
       'Master', 'Keeper of', 'Guardian of', 'Weaver of', 'Scholar of',
       'Chronicler of', 'Seeker of', 'Protector of', 'Artist of'
@@ -187,7 +187,6 @@ export class DoppelgangerGenerator {
 
   private static generateBackgroundStory(
     name: string, 
-    occupation: string, 
     data: OnboardingData, 
     traits: string[]
   ): string {
