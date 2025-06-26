@@ -11,7 +11,7 @@ export default function ChatPage() {
   const [searchParams] = useSearchParams();
   const conversationId = searchParams.get('chat');
 
-  const { doppelganger} = useProfileStore();
+  const { doppelganger } = useProfileStore();
   const {
     messages,
     isLoading,
@@ -195,9 +195,9 @@ export default function ChatPage() {
                 >
                   <div className={`max-w-[80%] ${message.sender === 'user' ? 'order-2' : 'order-1'}`}>
                     <div
-                      className={`p-3 rounded-lg ${message.sender === 'user'
-                        ? 'bg-brown-100 text-brown-800 rounded-br-sm'
-                        : 'bg-brown-100/10 text-brown-100 rounded-bl-sm border border-brown-100/20'
+                      className={`rounded-lg ${message.sender === 'user'
+                        ? 'px-2 py-1.5 bg-brown-300/30 text-brown-100 rounded-br-sm'
+                        : 'p-2'
                         }`}
                     >
                       <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.message}</p>
@@ -246,7 +246,7 @@ export default function ChatPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className={`flex-shrink-0 p-4 ${hasMessages ? 'border-t border-brown-100/20' : ''}`}>
+      <div className={`flex-shrink-0 pb-6 px-4 md:px-0 ${hasMessages ? '' : ''}`}>
         {connectionStatus === 'disconnected' && (
           <div className="mb-3 p-2 bg-red-400/20 border border-red-400/40 rounded-lg text-center">
             <p className="text-red-300 text-sm">
@@ -262,7 +262,7 @@ export default function ChatPage() {
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Share thy thoughts with thy Renaissance mirror... (Shift+Enter for new line)"
+              placeholder="Share thy thoughts with thy Renaissance mirror..."
               disabled={isSending}
               rows={1}
               className="w-full px-4 py-3 text-lg bg-brown-100/5 border-b-2 border-brown-100/20 text-brown-100 placeholder-brown-100/40 focus:outline-none focus:border-gold placeholder:font-lato transition-colors duration-200 resize-none outline-0 min-h-[3rem] max-h-[7.5rem] overflow-y-auto"
@@ -271,22 +271,6 @@ export default function ChatPage() {
                 scrollbarColor: '#D4AF37 #2A1F14'
               }}
             />
-            <style jsx>{`
-              textarea::-webkit-scrollbar {
-                width: 6px;
-              }
-              textarea::-webkit-scrollbar-track {
-                background: #2A1F14;
-                border-radius: 3px;
-              }
-              textarea::-webkit-scrollbar-thumb {
-                background: #D4AF37;
-                border-radius: 3px;
-              }
-              textarea::-webkit-scrollbar-thumb:hover {
-                background: #B8941F;
-              }
-            `}</style>
           </div>
           <Button
             type="submit"
@@ -294,7 +278,7 @@ export default function ChatPage() {
             radius="curved"
             disabled={!inputMessage.trim() || isSending}
             loading={isSending}
-            className="px-4 h-12"
+            className="h-12"
           >
             {!isSending && <Icon icon="streamline-cyber:quill" className="w-5 h-5" />}
           </Button>

@@ -1,29 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { Button } from '@/components';
 import { Icon } from '@iconify/react';
 import { Chessboard } from 'react-chessboard';
+import { ChessAI, type Difficulty } from '@/lib/chess-ai';
 
 export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
-  const [game, setGame] = useState('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+  const [fen, setFen] = useState('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
   const [gameStatus, setGameStatus] = useState<'playing' | 'checkmate' | 'stalemate' | 'draw'>('playing');
   const [currentPlayer, setCurrentPlayer] = useState<'white' | 'black'>('white');
+  const [difficulty, setDifficulty] = useState<Difficulty>('easy');
+
+  // Memoize ChessAI to prevent unnecessary re-instantiation
+  const chessAI = useMemo(() => new ChessAI(fen, difficulty), [difficulty]);
+
+  // Update AI game state when FEN changes
+  useEffect(() => {
+    chessAI.updateGame(fen);
+  }, [fen, chessAI]);
+
+  // Handle AI move with slight delay for better UX
+  useEffect(() => {
+    if (currentPlayer === 'black' && gameStatus === 'playing') {
+      const timer = setTimeout(() => {
+        const aiMove = chessAI.getAIMove();
+        if (aiMove) {
+          const newFen = chessAI.makePlayerMove(aiMove.from, aiMove.to);
+          if (newFen) {
+            setFen(newFen);
+            setGameStatus(chessAI.getGameStatus());
+            setCurrentPlayer('white');
+          }
+        }
+      }, 500); // 500ms delay for natural feel
+      return () => clearTimeout(timer);
+    }
+  }, [currentPlayer, gameStatus, chessAI]);
 
   const resetGame = () => {
-    setGame('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+    setFen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
     setGameStatus('playing');
     setCurrentPlayer('white');
   };
 
   const onDrop = (sourceSquare: string, targetSquare: string) => {
-    // This is a simplified implementation
-    // In a real chess game, you'd need proper chess logic validation
-    console.log(`Move from ${sourceSquare} to ${targetSquare}`);
-    
-    // Toggle player for demo purposes
-    setCurrentPlayer(currentPlayer === 'white' ? 'black' : 'white');
-    
-    return true;
+    if (currentPlayer !== 'white' || gameStatus !== 'playing') return false;
+
+    const newFen = chessAI.makePlayerMove(sourceSquare, targetSquare);
+    if (newFen) {
+      setFen(newFen);
+      setGameStatus(chessAI.getGameStatus());
+      setCurrentPlayer('black');
+      return true;
+    }
+    return false;
+  };
+
+  const handleDifficultyChange = (newDifficulty: Difficulty) => {
+    setDifficulty(newDifficulty);
+    resetGame();
   };
 
   return (
@@ -50,6 +85,19 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </Button>
       </div>
 
+      <div className="flex justify-center mb-4">
+        {(['easy', 'medium', 'hard'] as Difficulty[]).map((level) => (
+          <Button
+            key={level}
+            variant={difficulty === level ? 'secondary' : 'ghost'}
+            onClick={() => handleDifficultyChange(level)}
+            className="mx-2"
+          >
+            {level.charAt(0).toUpperCase() + level.slice(1)}
+          </Button>
+        ))}
+      </div>
+
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -59,7 +107,6 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           <p className="text-brown-100/80 mb-4 font-lato">
             Current Turn: <span className="text-gold font-semibold capitalize">{currentPlayer}</span>
           </p>
-          
           {gameStatus !== 'playing' && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -67,9 +114,11 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               className="p-4 bg-gold/20 rounded-lg border border-gold mb-4"
             >
               <p className="text-gold font-im text-xl">
-                {gameStatus === 'checkmate' ? 'Checkmate! The game is won!' :
-                 gameStatus === 'stalemate' ? 'Stalemate! A draw by position.' :
-                 'The game ends in a draw.'}
+                {gameStatus === 'checkmate'
+                  ? 'Checkmate! The game is won!'
+                  : gameStatus === 'stalemate'
+                  ? 'Stalemate! A draw by position.'
+                  : 'The game ends in a draw.'}
               </p>
             </motion.div>
           )}
@@ -77,7 +126,7 @@ export const ChessGame: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
         <div className="max-w-lg mx-auto">
           <Chessboard
-            position={game}
+            position={fen}
             onPieceDrop={onDrop}
             boardOrientation="white"
             customBoardStyle={{

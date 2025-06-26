@@ -101,30 +101,30 @@
 /* Smooth, fluid, and brown-100 themed scrollbar */
 body, * {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-brown-300, #7B2C3B) var(--color-brown-100, #F5F0E1);
+  scrollbar-color: var(#7B2C3B) var(--color-brown-100, #F5F0E1);
   scroll-behavior: smooth;
 }
 
 ::-webkit-scrollbar {
   width: 12px;
   height: 12px;
-  background: var(--color-brown-100, #F5F0E1);
+  background: var(#F5F0E1);
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-brown-100, #F5F0E1);
+  background: var(#F5F0E1);
   border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, var(--color-brown-300, #7B2C3B) 60%, var(--color-brown-800, #2A1F14) 100%);
+  background: linear-gradient(135deg, var(#7B2C3B) 60%, var(--color-brown-800, #2A1F14) 100%);
   border-radius: 8px;
-  border: 2px solid var(--color-brown-100, #F5F0E1);
+  border: 2px solid var(#F5F0E1);
   transition: background 0.3s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, var(--color-brown-800, #2A1F14) 60%, var(--color-brown-300, #7B2C3B) 100%);
+  background: linear-gradient(135deg, var(--color-brown-800, #2A1F14) 60%, var(#7B2C3B) 100%);
 }
 
 @theme {
@@ -142,3 +142,43 @@ button {
   cursor: pointer;
 }
 
+textarea::-webkit-scrollbar {
+  width: 6px;
+}
+textarea::-webkit-scrollbar-track {
+  background: #2A1F14;
+  border-radius: 3px;
+}
+textarea::-webkit-scrollbar-thumb {
+  background: #7B2C3B ;
+  border-radius: 3px;
+}
+textarea::-webkit-scrollbar-thumb:hover {
+  background: #7B2C3B;
+}
+
+section[role="presentation"]::-webkit-scrollbar {
+  width: 8px;
+  background: transparent;
+}
+
+section[role="presentation"]::-webkit-scrollbar-track {
+  background: var(--color-brown-800, #2A1F14);
+  border-radius: 6px;
+}
+
+section[role="presentation"]::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--color-brown-300, #7B2C3B) 60%, var(--color-brown-800, #2A1F14) 100%);
+  border-radius: 6px;
+  border: 2px solid var(--color-brown-800, #2A1F14);
+  transition: background 0.3s;
+}
+
+section[role="presentation"]::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, var(--color-brown-800, #2A1F14) 60%, var(--color-brown-300, #7B2C3B) 100%);
+}
+
+section[role="presentation"] {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-brown-300, #7B2C3B) var(--color-brown-800, #2A1F14);
+}
