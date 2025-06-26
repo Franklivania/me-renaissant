@@ -14,7 +14,6 @@
     "@supabase/supabase-js": "^2.50.1",
     "@tailwindcss/vite": "^4.1.10",
     "@tanstack/react-query": "^5.81.2",
-    "@types/chess.js": "^0.13.7",
     "axios": "^1.10.0",
     "chess.js": "^1.4.0",
     "class-variance-authority": "^0.7.1",
