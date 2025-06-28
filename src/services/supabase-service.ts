@@ -139,6 +139,9 @@ export class SupabaseService {
       // Filter by conversation ID if provided
       if (conversationId) {
         query = query.eq('persona_id', conversationId);
+      } else {
+        // For default conversation, get messages with null persona_id
+        query = query.is('persona_id', null);
       }
 
       const { data, error } = await query;
@@ -213,6 +216,7 @@ export class SupabaseService {
     try {
       const sessionId = this.getSessionId();
       
+      // Delete all messages for this conversation
       const { error } = await supabase
         .from('conversations')
         .delete()
@@ -220,10 +224,11 @@ export class SupabaseService {
         .eq('persona_id', conversationId);
 
       if (error) {
-        console.error('Error deleting conversation:', error);
+        console.error('Error deleting conversation from Supabase:', error);
         throw error;
       }
 
+      console.log(`Successfully deleted conversation ${conversationId} from Supabase`);
       return true;
     } catch (error) {
       console.error('Error in deleteConversation:', error);

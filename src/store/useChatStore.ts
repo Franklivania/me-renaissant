@@ -22,7 +22,7 @@ interface ChatState {
   // Actions
   initializeChat: () => Promise<void>;
   loadConversations: () => Promise<void>;
-  loadConversationHistory: (conversationId?: string) => Promise<void>;
+  loadConversationHistory: (conversationId?: string) => Promise<ConversationMessage[]>;
   addMessage: (message: Omit<ConversationMessage, 'id' | 'created_at'>) => Promise<void>;
   setTyping: (typing: boolean) => void;
   setCurrentConversation: (id: string | null) => void;
@@ -72,7 +72,7 @@ export const useChatStore = create<ChatState>()(
         }
       },
 
-      loadConversationHistory: async (conversationId?: string) => {
+      loadConversationHistory: async (conversationId?: string): Promise<ConversationMessage[]> => {
         set({ isLoading: true });
         
         try {
@@ -84,9 +84,12 @@ export const useChatStore = create<ChatState>()(
             currentConversationId: conversationId || null,
             isConnected: true
           });
+
+          return messages;
         } catch (error) {
           console.error('Error loading conversation history:', error);
           set({ isLoading: false, isConnected: false });
+          return [];
         }
       },
 
@@ -151,15 +154,21 @@ export const useChatStore = create<ChatState>()(
 
       deleteConversation: async (conversationId): Promise<boolean> => {
         try {
+          // Delete from Supabase first
           const success = await SupabaseService.deleteConversation(conversationId);
           
           if (success) {
-            // Remove from local state
+            // Remove from local state immediately
             set((state) => ({
               conversations: state.conversations.filter(conv => conv.id !== conversationId),
               messages: state.currentConversationId === conversationId ? [] : state.messages,
               currentConversationId: state.currentConversationId === conversationId ? null : state.currentConversationId
             }));
+
+            // Force reload conversations to ensure sync
+            setTimeout(async () => {
+              await get().loadConversations();
+            }, 100);
           }
           
           return success;
@@ -173,7 +182,7 @@ export const useChatStore = create<ChatState>()(
       name: 'renaissance-chat-store',
       partialize: (state) => ({
         currentConversationId: state.currentConversationId,
-        conversations: state.conversations
+        // Don't persist conversations - always load fresh from server
       })
     }
   )

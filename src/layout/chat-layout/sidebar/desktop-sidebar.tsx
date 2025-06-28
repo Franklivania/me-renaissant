@@ -29,6 +29,7 @@ const NavItem = ({
 }) => {
   const [showTooltip, setShowTooltip] = useState(false)
   const { activeDropdown, setActiveDropdown, closeDropdown } = useChatActionsStore()
+  const { messages, loadConversationHistory } = useChatStore()
   const dropdownRef = useRef<HTMLDivElement>(null)
   
   const isDropdownOpen = activeDropdown === conversationId
@@ -143,9 +144,12 @@ const NavItem = ({
                 <ChatActions
                   conversationId={conversationId}
                   conversationTitle={label}
-                  onActionComplete={() => {
+                  messages={messages}
+                  onActionComplete={async () => {
                     closeDropdown()
-                    window.location.reload()
+                    // Force reload conversations after action
+                    const { loadConversations } = useChatStore.getState()
+                    await loadConversations()
                   }}
                 />
               </div>

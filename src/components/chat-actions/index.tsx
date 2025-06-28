@@ -23,14 +23,26 @@ export const ChatActions: React.FC<ChatActionsProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
-  const { deleteConversation } = useChatStore();
+  const { deleteConversation, loadConversationHistory } = useChatStore();
   const navigate = useNavigate();
 
   const handleExportChat = async () => {
     setIsExporting(true);
 
     try {
-      const chatContent = messages
+      // If no messages provided, load them from the conversation
+      let chatMessages = messages;
+      if (chatMessages.length === 0) {
+        chatMessages = await loadConversationHistory(conversationId);
+      }
+
+      if (chatMessages.length === 0) {
+        console.warn('No messages to export');
+        setIsExporting(false);
+        return;
+      }
+
+      const chatContent = chatMessages
         .map(msg => {
           const timestamp = new Date(msg.created_at).toLocaleString();
           const sender = msg.sender === 'user' ? 'You' : 'Renaissance Mirror';
@@ -40,7 +52,7 @@ export const ChatActions: React.FC<ChatActionsProps> = ({
 
       const fullContent = `Chat Export: ${conversationTitle}
 Generated on: ${new Date().toLocaleString()}
-Total Messages: ${messages.length}
+Total Messages: ${chatMessages.length}
 
 ${'='.repeat(50)}
 
@@ -50,14 +62,26 @@ ${'='.repeat(50)}
 
 End of Chat Export`;
 
-      const blob = new Blob([fullContent], { type: 'text/plain' });
+      // Create and download the file
+      const blob = new Blob([fullContent], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${conversationTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.txt`;
+      
+      // Clean filename
+      const cleanTitle = conversationTitle
+        .replace(/[^a-z0-9]/gi, '_')
+        .toLowerCase()
+        .substring(0, 50); // Limit length
+      
+      link.download = `${cleanTitle}_${Date.now()}.txt`;
+      
+      // Trigger download
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      
+      // Clean up
       URL.revokeObjectURL(url);
 
       onActionComplete?.();
@@ -76,12 +100,16 @@ End of Chat Export`;
 
       if (success) {
         setShowDeleteModal(false);
-        onActionComplete?.();
-
+        
+        // Navigate away if currently viewing this conversation
         const currentUrl = window.location.href;
         if (currentUrl.includes(`chat=${conversationId}`)) {
           navigate('/chat');
         }
+        
+        onActionComplete?.();
+      } else {
+        console.error('Failed to delete conversation');
       }
     } catch (error) {
       console.error('Error deleting conversation:', error);
@@ -95,7 +123,7 @@ End of Chat Export`;
       {/* Export Action */}
       <button
         onClick={handleExportChat}
-        disabled={isExporting || messages.length === 0}
+        disabled={isExporting}
         className="w-full flex items-center gap-3 p-2 rounded-md hover:bg-brown-100/10 text-brown-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-left"
       >
         <Icon
